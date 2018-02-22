@@ -1,0 +1,5 @@
+Python 3.6.4 (pip 9.0.8)
+
+Opencv 3.4.0.12
+Scikit-learn 0.19
+Matplotlib 2.1.2
