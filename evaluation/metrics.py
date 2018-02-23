@@ -6,6 +6,37 @@ from PIL import Image
 
 def eval_test(test_path, gt_path, test_prefix='', gt_prefix='',
               test_format='png', gt_format='png', exigence=2):
+    """
+    Evaluates some test results against a given ground truth
+
+    :param test_path: (str) relative or absolute path to the test results images
+    :param gt_path: (str) relative or absolute path to the ground truth images
+    :param test_prefix: (str) prefix of the test files before their ID (e.g.
+    test_A_001235.png has test_A_ as prefix)
+    :param gt_prefix: (str) prefix of the ground truth files before their ID
+    (e.g. gt001235.png has gt as prefix)
+    :param test_format: (str) format of the test images
+    :param gt_format: (str) format of the ground truth images
+    :param exigence: (int) tells how easy will be from a pixel to be foreground
+    in the ground truth:
+
+        - 0: all non-static pixels will be taken as foreground
+        - 1: all non-static pixels excepting hard shadows will be taken as
+        foreground
+        - 2: only pixels with motion inside the region of interest will be taken
+        as foreground
+        - 3: only pixels with known motion inside the region of interest will be
+        taken as foreground
+        - Else exigence=2 will be assumed
+
+    :return: (dict) results of the test analysis.
+
+        - TP: (int) true positives
+        - FP: (int) false positives
+        - FN: (int) false negatives
+        - TN: (int) true negatives
+
+    """
 
     if exigence is 0:
         fg_thresh = 25
@@ -46,17 +77,92 @@ def eval_test(test_path, gt_path, test_prefix='', gt_prefix='',
 
 
 def prec(data):
+    """
+    Precision
+
+    :param (dict) results of the test analysis.
+
+        - TP: (int) true positives
+        - FP: (int) false positives
+        - FN: (int) false negatives
+        - TN: (int) true negatives
+
+    :return: (int)
+    """
     return data['TP'] / (data['TP']+data['FP'])
 
 
 def recall(data):
+    """
+    Recall
+
+    :param (dict) results of the test analysis.
+
+        - TP: (int) true positives
+        - FP: (int) false positives
+        - FN: (int) false negatives
+        - TN: (int) true negatives
+
+    :return: (int)
+    """
     return data['TP'] / (data['TP'] + data['FN'])
 
 
 def f_score(data, beta=1):
+    """
+    F_beta score
+
+    :param (dict) results of the test analysis.
+
+        - TP: (int) true positives
+        - FP: (int) false positives
+        - FN: (int) false negatives
+        - TN: (int) true negatives
+
+    :return: (int)
+    """
     return (1 + (beta**2)) * ((prec(data) * recall(data)) /
                               ((beta**2) * (prec(data)) + recall(data)))
 
 
 def f1_score(data):
+    """
+    F_1 score
+
+    :param (dict) results of the test analysis.
+
+        - TP: (int) true positives
+        - FP: (int) false positives
+        - FN: (int) false negatives
+        - TN: (int) true negatives
+
+    :return: (int)
+    """
     return f_score(data, beta=1)
+
+
+def summarize_tests(tests):
+    """
+    Prints results from some tests
+
+    :param tests: (list of dict) contains a set of analyzed tests where each
+    test has the following keys:
+
+        - description: (str) descriptive string of the test
+        - data: (dict) results of the test analysis.
+
+            - TP: (int) true positives
+            - FP: (int) false positives
+            - FN: (int) false negatives
+            - TN: (int) true negatives
+    """
+    for test in tests:
+        print('-' * 100)
+        print(test['description'])
+        print('-' * 100)
+        print('TP: ' + str(test['data']['TP']))
+        print('FP: ' + str(test['data']['FP']))
+        print('FN: ' + str(test['data']['FN']))
+        print('TN: ' + str(test['data']['TN']))
+        print('\n' * 2)
+
