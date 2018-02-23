@@ -164,5 +164,8 @@ def summarize_tests(tests):
         print('FP: ' + str(test['data']['FP']))
         print('FN: ' + str(test['data']['FN']))
         print('TN: ' + str(test['data']['TN']))
+        print('Precison: ' + str(prec(test['data'])))
+        print('Recall: ' + str(recall(test['data'])))
+        print('F1-score: ' + str(f1_score(test['data'])))
         print('\n' * 2)
 
