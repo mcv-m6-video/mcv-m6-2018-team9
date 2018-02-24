@@ -1,6 +1,6 @@
 import os
 
-from evaluation import metrics
+from evaluation import metrics, visual
 
 
 def run():
@@ -27,3 +27,8 @@ def run():
     metrics.summarize_tests(tests)
 
     input('Press any key to continue to the qualitative results')
+
+    visual.play_matches(tests_folder, 'test_A_*.png')
+    visual.play_matches(tests_folder, 'test_B_*.png')
+
+
