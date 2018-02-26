@@ -2,9 +2,14 @@ import glob
 import os
 from copy import deepcopy
 import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from PIL import Image
+np.set_printoptions(threshold=np.nan)
+
+
 
 ALPHA = 10 ** (-12)
 
@@ -381,3 +386,33 @@ def plot_metric_history(test_historicals, mode):
         plt.show()
     else:
         print('Invalid option')
+
+
+def msen(test,gt):
+    valid = gt[:,:,2] == 1
+    gt_valid = gt[valid]
+    test_valid = test[valid]
+
+    VecErr = np.sqrt(np.power((gt_valid[:,0]-test_valid[:,0]),2) + np.power((gt_valid[:,1]-test_valid[:,1]),2))
+    Valid2 = VecErr[:] < 3.0
+    ValidGt = len(VecErr)
+    ValidVectors = len(VecErr[Valid2])
+
+    MSEN = np.mean(VecErr)
+    PEPN = (1.0 - float(ValidVectors) / float(ValidGt)) * 100.0
+
+    # = np.zeros(gt.shape)
+    #errImg[valid] = np.reshape()
+
+    print 'Valid GT Vectors: ',ValidGt
+    print 'Valid Error Vectors (< 3): ',ValidVectors
+    print 'PEPN: ', PEPN
+    print 'MSEN: ', MSEN
+
+    plt.hist(VecErr, bins=25, normed=True)
+    plt.xlabel('Error Magintude')
+    plt.ylabel('% of Pixels')
+    plt.title(" MSEN ")
+    plt.show()
+
+    return VecErr, MSEN, PEPN
