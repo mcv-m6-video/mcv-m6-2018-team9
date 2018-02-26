@@ -15,7 +15,7 @@ ALPHA = 10 ** (-12)
 
 
 def eval_test(test_path, gt_path, test_prefix='', gt_prefix='',
-              test_format='png', gt_format='png', exigence=2):
+              test_format='png', gt_format='png', exigence=2, desync=0):
     """
     Evaluates some test results against a given ground truth
 
@@ -66,6 +66,11 @@ def eval_test(test_path, gt_path, test_prefix='', gt_prefix='',
 
         f_id = filename.replace(os.path.join(test_path, test_prefix), '')
         f_id = f_id.replace('.' + test_format, '')
+        try:
+            f_id = str(int(f_id) + desync).zfill(6)
+        except:
+            print('Erroneous type of Id in data files will result in fake '
+                  'results.')
         filename_gt = os.path.join(gt_path, gt_prefix + f_id + '.' + gt_format)
         pil_img_gt = Image.open(filename_gt)
         real_img_gt = np.array(pil_img_gt)
@@ -386,6 +391,25 @@ def plot_metric_history(test_historicals, mode):
         plt.show()
     else:
         print('Invalid option')
+
+
+def plot_desynchronization_effect(tests_data, desynchronization_range=[0]):
+
+    styles = [('b-', 'blue'), ('r-', 'red'), ('g-', 'green'), ('y-', 'yellow')]
+
+    plt.title('F1 score')
+    patches = []
+
+    for i, desync_data in enumerate(tests_data):
+        plt.plot(desynchronization_range,
+                 [f1_score(data) for data in desync_data['data']],
+                 styles[i % 4][0])
+        patch = mpatches.Patch(color=styles[i % 4][1],
+                               label=desync_data['title'])
+        patches.append(patch)
+
+    plt.legend(handles=patches)
+    plt.show()
 
 
 def msen(pred, gt):
