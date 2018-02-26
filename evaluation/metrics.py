@@ -388,31 +388,28 @@ def plot_metric_history(test_historicals, mode):
         print('Invalid option')
 
 
-def msen(test,gt):
+def msen(pred, gt):
     valid = gt[:,:,2] == 1
     gt_valid = gt[valid]
-    test_valid = test[valid]
+    pred_valid = pred[valid]
 
-    VecErr = np.sqrt(np.power((gt_valid[:,0]-test_valid[:,0]),2) + np.power((gt_valid[:,1]-test_valid[:,1]),2))
-    Valid2 = VecErr[:] < 3.0
-    ValidGt = len(VecErr)
-    ValidVectors = len(VecErr[Valid2])
+    vect_err = gt_valid[:,:2] - pred_valid[:,:2]
+    squared_err = np.sum(vect_err**2, axis=1)
+    err = np.sqrt(squared_err)
+    hit = err < 3.0
 
-    MSEN = np.mean(VecErr)
-    PEPN = (1.0 - float(ValidVectors) / float(ValidGt)) * 100.0
+    msen = np.mean(squared_err)
+    pepn = 100 * (1 - np.mean(hit))
 
-    # = np.zeros(gt.shape)
-    #errImg[valid] = np.reshape()
+    print('Valid GT Vectors: ', hit.size)
+    print('Valid Error Vectors (< 3): ', hit.sum())
+    print('PEPN: ', pepn)
+    print('MSEN: ', msen)
 
-    print 'Valid GT Vectors: ',ValidGt
-    print 'Valid Error Vectors (< 3): ',ValidVectors
-    print 'PEPN: ', PEPN
-    print 'MSEN: ', MSEN
-
-    plt.hist(VecErr, bins=25, normed=True)
+    plt.hist(vect_err, bins=25, normed=True)
     plt.xlabel('Error Magintude')
     plt.ylabel('% of Pixels')
     plt.title(" MSEN ")
     plt.show()
 
-    return VecErr, MSEN, PEPN
+    return vect_err, msen, pepn

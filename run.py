@@ -11,13 +11,13 @@ def main():
     args = parser.parse_args()
     if args.week == 'week1':
         print('>>>> Executing: Week 1 - Task 1...')
-        #week1.task1.run()
+        week1.task1.run()
         print('>>>> Executing: Week 1 - Task 2...')
-        #week1.task2.run()
+        week1.task2.run()
         print('>>>> Executing: Week 1 - Task 3...')
         week1.task3.run()
         print('>>>> Executing: Week 1 - Task 5...')
-        #week1.task5.run()
+        week1.task5.run()
 
 
 if __name__ == '__main__':

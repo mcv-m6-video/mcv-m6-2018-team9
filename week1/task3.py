@@ -19,10 +19,12 @@ def run():
 
 
     """
+    print("MSEN & PEPN for sequence 45")
     test1 = optical_flow.read_file(TEST_FLOW_1)
     gt1 = optical_flow.read_file(GT_FLOW_1)
     VecErr1, MSEN1, PEPN1 = metrics.msen(test1,gt1)
 
+    print("MSEN & PEPN for sequence 157")
     test2 = optical_flow.read_file(TEST_FLOW_2)
     gt2 = optical_flow.read_file(GT_FLOW_2)
     VecErr2, MSEN2, PEPN2 = metrics.msen(test2,gt2)
