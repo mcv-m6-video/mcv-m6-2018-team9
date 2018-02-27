@@ -413,27 +413,37 @@ def plot_desynchronization_effect(tests_data, desynchronization_range=[0]):
 
 
 def msen(pred, gt):
+    """
+        msen
+
+        :param  numpy arrays with shape [height, width, 3]. The first and second channels
+                denote the corresponding optical flow 2D vector (u, v). The third channel
+                is a mask denoting if an optical flow 2D vector exists for that pixel.
+                Vector components u and v values range [-512..512].
+                - pred: test resulting optical flow matrix
+                - gt: ground truth optical flow matrix
+
+        :return: - (float)msen: Mean Square Error in Non-Occluded Areas
+                 - (float) pepn: Percentage of Error Pixels in Non-Occluded Areas
+                  - numpy array with shape [height,width]) img_err: magnitude of the squared error
+                  between input images on each position of the matrix.
+                  - numpy array with shape [height,1] err: vector containing error motion vectors magnitude
+
+        """
     valid = gt[:,:,2] == 1
     gt_valid = gt[valid]
     pred_valid = pred[valid]
-
-    vect_err = gt_valid[:,:2] - pred_valid[:,:2]
-    squared_err = np.sum(vect_err**2, axis=1)
-    err = np.sqrt(squared_err)
-    hit = err < 3.0
-
-    msen = np.mean(squared_err)
-    pepn = 100 * (1 - np.mean(hit))
+    img_err = np.zeros(shape=gt[:,:,1].shape)
+    err = gt_valid[:,:2] - pred_valid[:,:2]
+    squared_err = np.sum(err**2, axis=1)
+    vect_err = np.sqrt(squared_err)
+    hit = vect_err < 3.0
 
     print('Valid GT Vectors: ', hit.size)
     print('Valid Error Vectors (< 3): ', hit.sum())
-    print('PEPN: ', pepn)
-    print('MSEN: ', msen)
 
-    plt.hist(vect_err, bins=25, normed=True)
-    plt.xlabel('Error Magintude')
-    plt.ylabel('% of Pixels')
-    plt.title(" MSEN ")
-    plt.show()
+    img_err[valid] = vect_err
+    msen = np.mean(vect_err)
+    pepn = 100 * (1 - np.mean(hit))
 
-    return vect_err, msen, pepn
+    return msen, pepn, img_err, vect_err
