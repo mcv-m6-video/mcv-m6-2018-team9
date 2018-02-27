@@ -51,8 +51,8 @@ In addition to the source code we will keep updated this section with
 the links to weekly presentations, which summarize the work done and
 results:
 
-- Week 1: Introduction to the datasets, evaluation metrics and optical
-  flow analysis.
+- Week 1: [Introduction to the datasets, evaluation metrics and optical
+  flow analysis](https://docs.google.com/presentation/d/1VQUlbHy3PaaCxYBiEG8HufPkYlS-PI2vXVjm6JIfX0Q/edit?usp=sharing).
 - Week 2: Background estimation and Stauffer & Grimson's approach.
 - Week 3: Foreground segmentation, filtering and shadow removal.
 - Week 4: Optical flow and video stabilization.
