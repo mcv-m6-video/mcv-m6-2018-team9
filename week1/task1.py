@@ -25,5 +25,3 @@ def run():
                                   ' as foreground)', data=test_b))
 
     metrics.summarize_tests(tests)
-
-    input('Press any key to continue to the qualitative results')
