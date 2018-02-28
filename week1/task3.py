@@ -29,7 +29,10 @@ def run():
 
     plt.figure(1)
     cm = plt.cm.get_cmap('viridis')
-    n, bins, patches = plt.hist(err_vect_45, bins=25, stacked=False)
+    n, bins, patches = plt.hist(err_vect_45, bins=25, normed=1,stacked=False)
+    bins = 100*bins/np.sum(bins)
+
+
     bin_centers = 0.5 * (bins[:-1] + bins[1:])
     col = bin_centers - min(bin_centers)
     col /= max(col)
@@ -38,11 +41,11 @@ def run():
 
     plt.xlabel('Motion Error Magintude')
     plt.ylabel('Nº of Pixels')
-    plt.title(" MSEN  00157_10.png")
+    plt.title(" MSEN  00045_10.png")
     plt.show()
 
     plt.figure(2)
-    plt.title('Image 00157_10.png MSEN')
+    plt.title('Motion Error Image 000157_10.png reconstruction')
     plt.imshow(err_img_45)
     plt.colorbar()
     plt.show()
@@ -78,7 +81,7 @@ def run():
     plt.show()
 
     plt.figure(4)
-    plt.title('Image 00157_10.png MSEN ')
+    plt.title('Motion Error Image 000157_10.png reconstruction')
     plt.imshow(err_img_157)
     plt.colorbar()
     plt.show()
