@@ -89,7 +89,9 @@ def plot_map(im, flow, size=None, title=''):
 
     fig = plt.figure()
     plt.title(title)
-    plt.imshow(im)
-    plt.quiver(x[valid], y[valid], flow[valid][:,0], -flow[valid][:,1])
+    plt.imshow(im, cmap='gray')
+    plt.quiver(x[valid], y[valid], flow[valid][:,0], -flow[valid][:,1],
+               angles='uv', minlength=0.5, width=0.002, headwidth=4,
+               color='#ff6600ff')
     plt.show()
     return fig
