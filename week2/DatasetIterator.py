@@ -62,7 +62,7 @@ def DataIterator(test_path, gt_path, test_prefix='', gt_prefix='',
         print ("Couldn't find last element of the sequence in the dataset. Ending at the last element")
         end = -1
     
-    if end < ini:
+    if end < ini and end > -1:
         print("last element comes before than the first. Inverting them. Possible corruption?")
         ini, end = end, ini
              
