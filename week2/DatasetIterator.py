@@ -21,6 +21,7 @@ def DataIterator(test_path, gt_path, test_prefix='', gt_prefix='',
     :param start: (int) Id of the last element of the sequence
     :param process_gt: function to be applied to the grountruth for obtaining a specific format
     :param id_format: function to be applied to the start and end in order to find them on the dataset
+    :param im_proc: function to be applied to each image
     :yields: (tuple) Pair of Image - GrounTruth
         -Image
         -Ground Truth
