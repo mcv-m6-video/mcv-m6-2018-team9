@@ -5,7 +5,7 @@ from PIL import Image
 
 def DataIterator(test_path, gt_path, test_prefix='', gt_prefix='',
               test_format='png', gt_format='png', start = 0, end = -1, 
-         process_gt = lambda img: img, id_format = lambda form: form):
+         process_gt = lambda img: img, id_format = lambda form: form, im_proc = lambda proc : proc):
     
     """
     Iterator over the desired slice of the data
@@ -71,7 +71,7 @@ def DataIterator(test_path, gt_path, test_prefix='', gt_prefix='',
     for Im_p, gt_p in [(pre_id_imgs + ind + '.' + test_format, pre_id_gt + ind + '.' + gt_format) for ind in indices_im]:
 
             pil_img_test = Image.open(Im_p)
-            img_test = np.array(pil_img_test)
+            img_test = proc(np.array(pil_img_test))
             
             pil_img_gt = Image.open(gt_p)
             real_img_gt = process_gt(np.array(pil_img_gt))
