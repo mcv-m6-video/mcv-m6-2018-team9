@@ -412,6 +412,181 @@ def plot_desynchronization_effect(tests_data, desynchronization_range=[0]):
     plt.show()
 
 
+def plot_results_by_some_param(tests, param_range, param_name, mode):
+    """
+    Plots some test results by some parameter (e.g. some threshold). The data to
+    display will depend on the mode.
+
+    :param tests: (list of dicts) list of tests where each test has the
+    following keys:
+
+        - title: (str) descriptive string of the test
+        - data: (list of dict) results of the test analysis returned by
+        eval_test
+
+    :param param_range: (list of int) range of values for the parameter
+    :param param_name: (string) name for the parameter
+    :param mode: (str) Options:
+        - 'main': will display TP, FP, FN and TN.
+        - 'prec-rec': will display precision and recall.
+        - 'F1': will display F1 score.
+        - Otherwise it will do nothing.
+
+    NOTE: Colors will repeat for more than 2 tests.
+    """
+    styles = [('c-', 'b-', 'cyan', 'blue'), ('m-', 'r-', 'magenta', 'red'),
+              ('k-', 'g-', 'black', 'green'), ('ko-', 'y-', 'white', 'yellow')]
+    if mode is 'main':
+        plt.title('TP, FP, FN and TN by ' + param_name)
+        patches = []
+        for i, test in enumerate(tests):
+            try:
+                assert len(test['data']) is len(param_range)
+            except:
+                raise Exception(
+                    'The length of test data should be as long as the range of '
+                    + param_name)
+            plt.plot(param_range, [data['TP'] for data in test['data']],
+                     styles[0][i % 2])
+            plt.plot(param_range, [data['FP'] for data in test['data']],
+                     styles[1][i % 2])
+            plt.plot(param_range, [data['FN'] for data in test['data']],
+                     styles[2][i % 2])
+            plt.plot(param_range, [data['TN'] for data in test['data']],
+                     styles[3][i % 2])
+            patch_1 = mpatches.Patch(color=styles[0][2 + (i % 2)],
+                                     label=test['title'] + ' TP')
+            patch_2 = mpatches.Patch(color=styles[1][2 + (i % 2)],
+                                     label=test['title'] + ' FP')
+            patch_3 = mpatches.Patch(color=styles[2][2 + (i % 2)],
+                                     label=test['title'] + ' FN')
+            patch_4 = mpatches.Patch(color=styles[3][2 + (i % 2)],
+                                     label=test['title'] + ' TN')
+            patches.append(patch_1)
+            patches.append(patch_2)
+            patches.append(patch_3)
+            patches.append(patch_4)
+
+        plt.legend(handles=patches)
+        plt.xlabel(param_name)
+        plt.show()
+    elif mode == 'prec-rec':
+        plt.title('Precision & Recall by ' + param_name)
+        patches = []
+        for i, test in enumerate(tests):
+            try:
+                assert len(test['data']) is len(param_range)
+            except:
+                raise Exception(
+                    'The length of test data should be as long as the range of '
+                    + param_name)
+            plt.plot(param_range, [prec(data) for data in test['data']],
+                     styles[0][i % 2])
+            plt.plot(param_range, [recall(data) for data in test['data']],
+                     styles[1][i % 2])
+            patch_1 = mpatches.Patch(color=styles[0][2 + (i % 2)],
+                                     label=test['title'] + ' Precision')
+            patch_2 = mpatches.Patch(color=styles[1][2 + (i % 2)],
+                                     label=test['title'] + ' Recall')
+            patches.append(patch_1)
+            patches.append(patch_2)
+
+        plt.legend(handles=patches)
+        plt.xlabel(param_name)
+        plt.show()
+    elif mode is 'F1':
+        plt.title('F1 score by ' + param_name)
+        patches = []
+        for i, test in enumerate(tests):
+            try:
+                assert len(test['data']) is len(param_range)
+            except:
+                raise Exception(
+                    'The length of test data should be as long as the range of '
+                    + param_name)
+            plt.plot(param_range, [f1_score(data) for data in test['data']],
+                     styles[0][i % 2])
+            patch = mpatches.Patch(color=styles[0][2 + (i % 2)],
+                                   label=test['title'])
+            patches.append(patch)
+
+        plt.legend(handles=patches)
+        plt.xlabel(param_name)
+        plt.show()
+    else:
+        print('Invalid option')
+
+
+def plot_precision_recall_curves(tests):
+    """
+    Plots the precision-recall curve for a set of tests.
+
+    :param tests: (list of dicts) list of tests where each test has the
+    following keys:
+
+       - title: (str) descriptive string of the test
+        - data: (list of dict) results of the test analysis returned by
+        eval_test
+
+    NOTE: Colors will repeat for more than 4 tests.
+    """
+    styles = [('c-', 'cyan'), ('m-', 'magenta'), ('g-', 'green'),
+              ('y-', 'yellow')]
+
+    plt.title('Precision-Recall curve')
+    patches = []
+    for i, test in enumerate(tests):
+        precisions = [prec(data) for data in test['data']]
+        recalls = [recall(data) for data in test['data']]
+        plt.plot(recalls, precisions, styles[i % 4][0])
+        patch = mpatches.Patch(color=styles[i % 4][1], label=test['title'])
+        patches.append(patch)
+
+        plt.legend(handles=patches)
+        plt.ylabel('Precision')
+        plt.xlabel('Recall')
+        plt.show()
+
+
+def auc(test, curve_type, thr_range=[]):
+    """
+    Returns the area under the curve for some measures from a test.
+
+    :param test:  (dict) dictinary with the following keys:
+
+        - title: (str) descriptive string of the test
+        - data: (list of dict) results of the test analysis returned by
+        eval_test
+
+    :param curve_type: (str) Options:
+
+        - 'prec-rec': will compute the AUC of the precision-recall curve.
+        - 'F1': will compute the AUC of the F1-score vs threshold curve.
+        In this option it is necessary to specify the range of thresholds.
+
+    :param thr_range: (list of int) range of values for the threshold. Only used
+    in the F1-score option
+    :return: (int) Area Under the Curve for the specified mode and test
+    """
+    if curve_type == 'prec-rec':
+        precisions = [prec(data) for data in test['data']]
+        recalls = [recall(data) for data in test['data']]
+        return sum(np.array(precisions[1:]) * abs(np.diff(recalls))) \
+               + sum(abs(np.diff(precisions)) * abs(np.diff(recalls))) / 2
+    elif curve_type is 'F1':
+        try:
+            assert len(test['data']) is len(thr_range)
+        except:
+            raise Exception('The number of tests should be as long as the '
+                            'range of thresholds')
+        f1scores = [f1_score(data) for data in test['data']]
+        return sum(np.array(f1scores[1:]) * abs(np.diff(thr_range))) \
+               + sum(abs(np.diff(f1scores)) * abs(np.diff(thr_range))) / 2
+    else:
+        print('Invalid option')
+        return None
+
+
 def msen(pred, gt):
     """
         msen
