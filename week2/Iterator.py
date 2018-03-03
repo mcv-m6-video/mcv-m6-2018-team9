@@ -33,14 +33,14 @@ TestFolder = os.path.join('..','datasets', dataset, 'input')
 fall = Dataset('fall', TestFolder, GTFolder, TestPrefix, GTPrefix, TestFormat, GTFormat, id_format)
 
 dataset = 'highway'      
-gt_folder = os.path.join('..','datasets', dataset,'groundtruth')
-tests_folder = os.path.join('..','datasets', dataset, 'input')
+GTFolder = os.path.join('..','datasets', dataset,'groundtruth')
+TestFolder = os.path.join('..','datasets', dataset, 'input')
 
 highway = Dataset('highway', TestFolder, GTFolder, TestPrefix, GTPrefix, TestFormat, GTFormat, id_format)
 
 dataset = 'traffic'      
-gt_folder = os.path.join('..','datasets', dataset,'groundtruth')
-tests_folder = os.path.join('..','datasets', dataset, 'input')
+GTFolder = os.path.join('..','datasets', dataset,'groundtruth')
+TestFolder = os.path.join('..','datasets', dataset, 'input')
 
 traffic = Dataset('highway', TestFolder, GTFolder, TestPrefix, GTPrefix, TestFormat, GTFormat, id_format)
 
