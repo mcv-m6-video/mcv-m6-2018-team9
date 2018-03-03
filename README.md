@@ -79,6 +79,12 @@ the repository and execute:
 python run.py week1
 ```
 
+### Week 2 Code 
+
+Dataset prerequisites:
+
+* Download the [CDNET 2014 Highway Dataset](http://jacarini.dinf.usherbrooke.ca/static/dataset/baseline/highway.zip), [CDNET 2014 Fall Dataset](http://jacarini.dinf.usherbrooke.ca/static/dataset/dynamicBackground/fall.zip) and [CDNET 2014 Traffic Dataset](http://jacarini.dinf.usherbrooke.ca/static/dataset/cameraJitter/traffic.zip) datasets and unzip on the datasets folder
+
 ## Authors
 
 - [Ignasi Mas](mailto:ignasi.masm@e-campus.uab.cat)
