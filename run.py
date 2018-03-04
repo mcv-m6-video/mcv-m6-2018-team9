@@ -1,6 +1,7 @@
 import argparse
 
 import week1
+import week2
 
 
 def main():
@@ -21,6 +22,8 @@ def main():
         print('>>>> Executing: Week 1 - Task 5...')
         week1.task5.run()
 
+    elif args.week == 'week2':
+        week2.task2.run()
 
 if __name__ == '__main__':
     main()
