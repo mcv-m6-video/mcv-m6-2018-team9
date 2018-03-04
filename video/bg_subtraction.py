@@ -1,4 +1,5 @@
 import numpy as np
+import cv2 as cv
 
 
 def create_model(images):
@@ -43,3 +44,15 @@ def predict(images, model, alpha, rho=0):
             std[:,:,:] = rho * (im - mean) + (1 - rho) * std
 
     return estimation
+
+
+def create_model_opencv():
+    return cv.bgsegm.createBackgroundSubtractorLSBP()
+
+
+def predict_opencv(images, model):
+    mask_batch = []
+    for image in images:
+        mask = model.apply(image)
+        mask_batch.append(mask)
+    return np.array(mask_batch)
