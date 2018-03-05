@@ -27,7 +27,8 @@ def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
             gt = np.array(gt)
 
             img_gt = np.where(gt >= fg_th, 1, 0)
-            img_valid_gt = np.where((gt >= fg_th) & (gt <= bg_th), 1, 0)
+            img_valid_gt = np.where(np.logical_or((gt >= fg_th),(gt <= bg_th)),
+                                    1, 0)
 
             gt = np.stack((img_gt,img_valid_gt))
 

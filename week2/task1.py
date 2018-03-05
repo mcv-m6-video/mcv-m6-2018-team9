@@ -23,19 +23,24 @@ def run():
     ims, gts = cdnet.read_dataset('highway', 1200, 1350,
                                   colorspace='gray', annotated=True, bg_th=LABEL_SHADOW, fg_th=LABEL_MOTION)
     results_list = []
-    alpha_list = [1,3]
-    print(len(alpha_list))
+    results_dicts = []
+    alpha_list = [1,2,3,4,5,6,7,8,9,10]
     for alpha in alpha_list:
         pred = bg_subtraction.predict(ims, model, alpha)
 
         #import pdb; pdb.set_trace()
         # Extract metrics (TP, FP, ...) and plot results
         results = metrics.eval_from_mask(pred, gts[:,0], gts[:,1])
-        results_list.append(dict(description='Test A (Gaussian Modelling)', data=results))
+        results_list.append(results)
 
-    print(len(results_list))
-    metrics.plot_results_by_some_param(results_list, alpha_list, 'alpha',
+    results_dicts.append(dict(title='Test A (Gaussian Modelling)',
+                          data=results_list))
+
+    metrics.plot_results_by_some_param(results_dicts, alpha_list, 'alpha',
                                        'prec-rec')
+
+    metrics.plot_results_by_some_param(results_dicts, alpha_list, 'alpha',
+                                       'F1')
 
 
 
