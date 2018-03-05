@@ -6,15 +6,8 @@ import numpy as np
 from PIL import Image
 
 
-# Ground truth labels
-LABEL_STATIC = 0
-LABEL_SHADOW = 50
-LABEL_OUTSIDE_ROI = 85
-LABEL_UNKWN_MOTION = 170
-LABEL_MOTION = 255
-
-
-def iter_dataset(dataset, start, end, process_im=None, process_gt=None):
+def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
+                 bg_th=50, fg_th=85):
 
     if dataset not in ['fall', 'highway', 'traffic']:
         raise Exception('Unknown dataset')
@@ -30,7 +23,13 @@ def iter_dataset(dataset, start, end, process_im=None, process_gt=None):
         if os.path.exists(im_path) and os.path.exists(gt_path):
             im = cv2.imread(im_path)  # imread returns image in BGR format
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-            gt = cv2.imread(gt_path)
+            gt = Image.open(gt_path)
+            gt = np.array(gt)
+
+            img_gt = np.where(gt >= fg_th, 1, 0)
+            img_valid_gt = np.where((gt >= fg_th) & (gt <= bg_th), 1, 0)
+
+            gt = np.stack((img_gt,img_valid_gt))
 
             if process_im:
                 im = process_im(im)
@@ -41,15 +40,16 @@ def iter_dataset(dataset, start, end, process_im=None, process_gt=None):
             yield (im, gt)
 
 
-def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True):
+def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
+                 bg_th=50, fg_th=85):
     """
 
     colorspace: (str) 'rgb', 'gray'
 
-    annotated: (bool) if True, returns the batch of images and their
-      corresponding ground truth annotations.
-
-
+    annotated: (bool) if True, returns the batch of images, their
+      corresponding ground truth annotations and the ground truth valid
+      pixels according to gt labels
+      .
 
     """
     if colorspace == 'rgb':
@@ -62,7 +62,7 @@ def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True):
 
     batch_im = []
     batch_gt = []
-    for im, gt in iter_dataset(dataset, start, end, process_im):
+    for im, gt in iter_dataset(dataset, start, end, process_im, None, bg_th, fg_th):
         batch_im.append(im)
         batch_gt.append(gt)
 

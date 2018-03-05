@@ -245,7 +245,7 @@ def eval_test_history(test_path, gt_path, test_prefix='', gt_prefix='',
     return data_history
 
 
-def eval_from_mask(result_mask, gt_mask):
+def eval_from_mask(result_mask, gt_mask, valid_mask=None):
     """
     Evaluates some test results evolution against a given ground truth from
     logical matrices.
@@ -265,6 +265,8 @@ def eval_from_mask(result_mask, gt_mask):
         - TN: (int) true negatives
 
     """
+    if valid_mask is None:
+        valid_mask = np.ones(gt_mask.shape)
 
     data = dict(TP=0, FP=0, FN=0, TN=0)
 
@@ -272,10 +274,10 @@ def eval_from_mask(result_mask, gt_mask):
 
         trues_test = result.astype(bool)
         trues_gt = gt.astype(bool)
-        img_tp = np.logical_and(trues_test, trues_gt)
-        img_fp = np.logical_and(trues_test, np.logical_not(trues_gt))
-        img_fn = np.logical_and(np.logical_not(trues_test), trues_gt)
-        img_tn = np.logical_not(np.logical_and(trues_test, trues_gt))
+        img_tp = np.logical_and(trues_test, trues_gt)*valid_mask
+        img_fp = np.logical_and(trues_test, np.logical_not(trues_gt))*valid_mask
+        img_fn = np.logical_and(np.logical_not(trues_test), trues_gt)*valid_mask
+        img_tn = np.logical_not(np.logical_and(trues_test, trues_gt))*valid_mask
 
         data['TP'] += img_tp.sum()
         data['FP'] += img_fp.sum()
