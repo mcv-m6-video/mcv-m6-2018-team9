@@ -7,7 +7,7 @@ from PIL import Image
 
 
 def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
-                 bg_th=50, fg_th=85):
+                 bg_th=50, fg_th=255):
 
     if dataset not in ['fall', 'highway', 'traffic']:
         raise Exception('Unknown dataset')
@@ -23,14 +23,11 @@ def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
         if os.path.exists(im_path) and os.path.exists(gt_path):
             im = cv2.imread(im_path)  # imread returns image in BGR format
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
             gt = Image.open(gt_path)
             gt = np.array(gt)
-
-            img_gt = np.where(gt >= fg_th, 1, 0)
-            img_valid_gt = np.where(np.logical_or((gt >= fg_th),(gt <= bg_th)),
-                                    1, 0)
-
-            gt = np.stack((img_gt,img_valid_gt))
+            gt = np.stack([(gt >= fg_th),
+                           (gt >= fg_th) | (gt <= bg_th)])
 
             if process_im:
                 im = process_im(im)
@@ -42,15 +39,14 @@ def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
 
 
 def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
-                 bg_th=50, fg_th=85):
+                 bg_th=50, fg_th=255):
     """
 
     colorspace: (str) 'rgb', 'gray'
 
     annotated: (bool) if True, returns the batch of images, their
-      corresponding ground truth annotations and the ground truth valid
-      pixels according to gt labels
-      .
+       corresponding ground truth annotations and the ground truth valid
+       pixels according to gt labels
 
     """
     if colorspace == 'rgb':
@@ -63,7 +59,8 @@ def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
 
     batch_im = []
     batch_gt = []
-    for im, gt in iter_dataset(dataset, start, end, process_im, None, bg_th, fg_th):
+    for im, gt in iter_dataset(dataset, start, end, process_im=process_im,
+                               bg_th=bg_th, fg_th=fg_th):
         batch_im.append(im)
         batch_gt.append(gt)
 
