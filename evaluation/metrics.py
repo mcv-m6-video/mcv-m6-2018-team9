@@ -245,44 +245,31 @@ def eval_test_history(test_path, gt_path, test_prefix='', gt_prefix='',
     return data_history
 
 
-def eval_from_mask(result_mask, gt_mask):
+def eval_from_mask(result_mask, gt_mask, valid_mask=None):
     """
     Evaluates some test results evolution against a given ground truth from
     logical matrices.
-
     :param result_mask: (numpy array) 3D matrix (2D + temporal dimension) with
     the mask of the results for each one, where 0 is background and 1 is
     foreground.
     :param gt_mask: (numpy array) 3D matrix (2D + temporal dimension) with
     the mask of the ground truth for each one, where 0 is background and 1 is
     foreground.
-
     :return: (dict) results of the test analysis.
-
         - TP: (int) true positives
         - FP: (int) false positives
         - FN: (int) false negatives
         - TN: (int) true negatives
-
     """
+    if valid_mask is None:
+        valid_mask = np.ones(gt_mask.shape, dtype='bool')
 
-    data = dict(TP=0, FP=0, FN=0, TN=0)
+    tp = result_mask & gt_mask & valid_mask
+    fp = result_mask & ~gt_mask & valid_mask
+    fn = ~result_mask & gt_mask & valid_mask
+    tn = ~result_mask & ~gt_mask & valid_mask
 
-    for result, gt in zip(result_mask, gt_mask):
-
-        trues_test = result.astype(bool)
-        trues_gt = gt.astype(bool)
-        img_tp = np.logical_and(trues_test, trues_gt)
-        img_fp = np.logical_and(trues_test, np.logical_not(trues_gt))
-        img_fn = np.logical_and(np.logical_not(trues_test), trues_gt)
-        img_tn = np.logical_not(np.logical_and(trues_test, trues_gt))
-
-        data['TP'] += img_tp.sum()
-        data['FP'] += img_fp.sum()
-        data['FN'] += img_fn.sum()
-        data['TN'] += img_tn.sum()
-
-    return data
+    return dict(TP=tp.sum(), FP=fp.sum(), FN=fn.sum(), TN=tn.sum())
 
 
 def prec(data):
