@@ -46,8 +46,8 @@ def predict(images, model, alpha, rho=0):
     return estimation
 
 
-def create_model_opencv():
-    return cv.bgsegm.createBackgroundSubtractorLSBP()
+def create_model_opencv(threshold):
+    return cv.bgsegm.createBackgroundSubtractorLSBP(LSBPthreshold=threshold)
 
 
 def predict_opencv(images, model):
