@@ -22,16 +22,20 @@ def run():
     # Test the model with the second half of the images
     ims, gts = cdnet.read_dataset('highway', 1200, 1350,
                                   colorspace='gray', annotated=True, bg_th=LABEL_SHADOW, fg_th=LABEL_MOTION)
-    pred = bg_subtraction.predict(ims, model, 1)
-
-    #import pdb; pdb.set_trace()
-
-    # Extract metrics (TP, FP, ...) and plot results
     results_list = []
-    results = metrics.eval_from_mask(pred, gts[:,0], gts[:,1])
-    results_list.append(dict(description='Test A (Gaussian Modelling)', data=results))
+    alpha_list = [1,3]
+    print(len(alpha_list))
+    for alpha in alpha_list:
+        pred = bg_subtraction.predict(ims, model, alpha)
 
-    metrics.plot_results_by_some_param(results_list, [1,3,5,7,10,12,15], 'alpha', 'prec-rec')
+        #import pdb; pdb.set_trace()
+        # Extract metrics (TP, FP, ...) and plot results
+        results = metrics.eval_from_mask(pred, gts[:,0], gts[:,1])
+        results_list.append(dict(description='Test A (Gaussian Modelling)', data=results))
+
+    print(len(results_list))
+    metrics.plot_results_by_some_param(results_list, alpha_list, 'alpha',
+                                       'prec-rec')
 
 
 
