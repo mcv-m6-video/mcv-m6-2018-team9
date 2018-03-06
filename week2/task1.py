@@ -1,8 +1,7 @@
 from data import cdnet
 from video import bg_subtraction
 from evaluation import metrics
-
-
+from evaluation import animations
 
 # Ground truth labels
 
@@ -11,6 +10,10 @@ LABEL_SHADOW = 50
 LABEL_OUTSIDE_ROI = 85
 LABEL_UNKWN_MOTION = 170
 LABEL_MOTION = 255
+
+OUT_VIDEO_PATH = 'animations/'
+OUT_VIDEO_EXTENSION = 'gif' #['gif','mp4']
+OUT_VIDEO_CODEC = None #[None,'mp4v']
 
 def run():
 
@@ -25,10 +28,21 @@ def run():
     results_list = []
     results_dicts = []
     alpha_list = [1,2,3,4,5,6,7,8,9,10]
+
     for alpha in alpha_list:
+
         pred = bg_subtraction.predict(ims, model, alpha)
 
-        #import pdb; pdb.set_trace()
+        out_filename = 'model_gaussian-alpha_' + str(alpha)
+        is_mask = True
+
+        if out_filename is not None and OUT_VIDEO_EXTENSION is not None:
+            print('>>>>Recording animation in '+OUT_VIDEO_PATH+out_filename+'.'+
+                                                OUT_VIDEO_EXTENSION+'...')
+
+            animations.video_recorder(pred, OUT_VIDEO_PATH, out_filename,
+                OUT_VIDEO_CODEC, OUT_VIDEO_EXTENSION, is_mask)
+
         # Extract metrics (TP, FP, ...) and plot results
         results = metrics.eval_from_mask(pred, gts[:,0], gts[:,1])
         results_list.append(results)
