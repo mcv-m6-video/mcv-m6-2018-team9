@@ -12,7 +12,7 @@ def create_model(images):
     return (mean, std)
 
 
-def predict(images, model, alpha, rho=0):
+def predict(images, model, alpha, rho=0, return_model=False):
     """ims -> image batch, numpy array [num_ims, height, width, channel]
     model -> 2-tuple (mean, std) each numpy array [height, width, channel]
     alpha -> scalar
@@ -32,18 +32,21 @@ def predict(images, model, alpha, rho=0):
     """
     n, h, w, _ = images.shape
     mean, std = model
-    threshold = alpha * (std + 2)
     estimation = np.zeros((n, h, w), dtype='bool')
 
     for i, im in enumerate(images):
-        estimation[i] = np.prod(np.absolute(im - mean) >= threshold,
-                                axis=-1, dtype='bool')
-        if rho != 0:
-            # use arr[:,:,:] to force side effect (namely: modify input model)
-            mean[:,:,:] = rho * im + (1 - rho) * mean
-            std[:,:,:] = rho * (im - mean) + (1 - rho) * std
+        fgmask = np.absolute(im - mean) >= alpha * (std + 2)
+        estimation[i] = np.prod(fgmask, axis=-1, dtype='bool')
 
-    return estimation
+        if rho != 0:
+            mean[~fgmask] = rho * im[~fgmask] + (1 - rho) * mean[~fgmask]
+            std[~fgmask] = np.sqrt(rho * (im[~fgmask] - mean[~fgmask])**2 +
+                                   (1 - rho) * std[~fgmask]**2)
+
+    if return_model:
+        return (estimation, (mean, std))
+    else:
+        return estimation
 
 
 def create_model_opencv(threshold):
