@@ -15,6 +15,8 @@ def video_recorder(images, out_path, out_filename, codec=None, out_ext='gif'):
 
         if input images are non greyscale and extension is set to 'gif' the
         animation will be created using only the first channel of the images
+        if input images is larger than 200 and extension is 'gif' the
+        function generates a .gif file with the first 200 images
 
     """
     is_mask = False
