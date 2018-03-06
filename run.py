@@ -23,7 +23,10 @@ def main():
         week1.task5.run()
 
     elif args.week == 'week2':
-        week2.task2.run()
+        print('>>>> Executing: Week 2 - Task 1...')
+        week2.task1.run()
+        print('>>>> Executing: Week 2 - Task 2...')
+        #week2.task2.run()
 
 if __name__ == '__main__':
     main()
