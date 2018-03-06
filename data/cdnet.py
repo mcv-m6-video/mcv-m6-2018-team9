@@ -51,7 +51,7 @@ def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
     """
     if colorspace == 'rgb':
         process_im = lambda im: im
-    if colorspace == 'hsv':
+    elif colorspace == 'hsv':
         process_im = lambda im: cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
     elif colorspace == 'gray':
         process_im = lambda im: np.expand_dims(
