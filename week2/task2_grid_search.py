@@ -79,8 +79,8 @@ def run(dataset):
         alpha_values = np.arange(0, 8, 0.25)
         rho_values = np.arange(0, 1, 0.10)
     elif dataset == 'traffic':
-        alpha_values = np.arange(0, 8, 0.25)
-        rho_values = np.arange(0, 1, 0.10)
+        alpha_values = np.arange(0, 6, 0.20)
+        rho_values = np.arange(0, 0.4, 0.05)
 
     # Grid search
     f1_results = grid_search(dataset, alpha_values, rho_values)
