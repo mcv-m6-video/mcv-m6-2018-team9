@@ -457,6 +457,7 @@ def plot_results_by_some_param(tests, param_range, param_name, mode):
         - 'main': will display TP, FP, FN and TN.
         - 'prec-rec': will display precision and recall.
         - 'F1': will display F1 score.
+        - 'prec-rec-f1': will display precision, recall and F1 score together.
         - Otherwise it will do nothing.
 
     NOTE: Colors will repeat for more than 2 tests.
@@ -536,6 +537,35 @@ def plot_results_by_some_param(tests, param_range, param_name, mode):
             patch = mpatches.Patch(color=styles[0][2 + (i % 2)],
                                    label=test['title'])
             patches.append(patch)
+
+        plt.legend(handles=patches)
+        plt.xlabel(param_name)
+        plt.show()
+    elif mode == 'prec-rec-f1':
+        plt.title('Precision, Recall & F1 score by ' + param_name)
+        patches = []
+        for i, test in enumerate(tests):
+            try:
+                assert len(test['data']) is len(param_range)
+            except:
+                raise Exception(
+                    'The length of test data should be as long as the range of '
+                    + param_name)
+            plt.plot(param_range, [prec(data) for data in test['data']],
+                     styles[0][i % 2])
+            plt.plot(param_range, [recall(data) for data in test['data']],
+                     styles[1][i % 2])
+            plt.plot(param_range, [f1_score(data) for data in test['data']],
+                     styles[2][i % 2])
+            patch_1 = mpatches.Patch(color=styles[0][2 + (i % 2)],
+                                     label=test['title'] + ' Precision')
+            patch_2 = mpatches.Patch(color=styles[1][2 + (i % 2)],
+                                     label=test['title'] + ' Recall')
+            patch_3 = mpatches.Patch(color=styles[2][2 + (i % 2)],
+                                     label=test['title'] + ' F1 score')
+            patches.append(patch_1)
+            patches.append(patch_2)
+            patches.append(patch_3)
 
         plt.legend(handles=patches)
         plt.xlabel(param_name)
