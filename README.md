@@ -95,7 +95,7 @@ To run each task of this week, `cd` to the root folder of
 the repository and execute:
 
 ```bash
-python run.py week_tN
+python run.py week2_tN
 ```
 
 where N is the number of the task (1 to 4).
