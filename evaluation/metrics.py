@@ -628,7 +628,9 @@ def auc(test, curve_type, thr_range=[]):
     if curve_type == 'prec-rec':
         precisions = [prec(data) for data in test['data']]
         recalls = [recall(data) for data in test['data']]
-        return sum(np.array(precisions[1:]) * abs(np.diff(recalls))) \
+        lower_precisions = [min(precisions[i], precisions[i + 1]) for i in
+                            range(len(precisions) - 1)]
+        return sum(np.array(lower_precisions) * abs(np.diff(recalls))) \
                + sum(abs(np.diff(precisions)) * abs(np.diff(recalls))) / 2
     elif curve_type is 'F1':
         try:
@@ -637,7 +639,9 @@ def auc(test, curve_type, thr_range=[]):
             raise Exception('The number of tests should be as long as the '
                             'range of thresholds')
         f1scores = [f1_score(data) for data in test['data']]
-        return sum(np.array(f1scores[1:]) * abs(np.diff(thr_range))) \
+        lower_f1 = [min(f1scores[i], f1scores[i + 1]) for i in
+                    range(len(f1scores) - 1)]
+        return sum(np.array(lower_f1) * abs(np.diff(thr_range))) \
                + sum(abs(np.diff(f1scores)) * abs(np.diff(thr_range))) / 2
     else:
         print('Invalid option')
