@@ -51,6 +51,10 @@ def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
     """
     if colorspace == 'rgb':
         process_im = lambda im: im
+    elif colorspace == 'ycbcr':
+        process_im = lambda im: cv2.cvtColor(im, cv2.COLOR_RGB2YCR_CB)
+    elif colorspace == 'ycbcr-only-color':
+        process_im = lambda im: cv2.cvtColor(im, cv2.COLOR_RGB2YCR_CB)[:, :, 1:]
     elif colorspace == 'hsv':
         process_im = lambda im: cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
     elif colorspace == 'hsv-only-color':
