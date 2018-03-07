@@ -6,7 +6,8 @@ import week2
 
 def main():
     parser = argparse.ArgumentParser(description='Run the tasks of each week.')
-    parser.add_argument('week', choices=['week1', 'week2', 'week3', 'week4','week5'],
+    parser.add_argument('week', choices=['week1', 'week2_t1', 'week2_t2',
+                                         'week2_t3', 'week2_t4'],
                         help='Execute the tasks of a week')
 
     args = parser.parse_args()
@@ -22,11 +23,14 @@ def main():
         print('>>>> Executing: Week 1 - Task 5...')
         week1.task5.run()
 
-    elif args.week == 'week2':
-        print('>>>> Executing: Week 2 - Task 1...')
+    elif args.week == 'week2_t1':
         week2.task1.run()
-        print('>>>> Executing: Week 2 - Task 2...')
-        #week2.task2.run()
+    elif args.week == 'week2_t2':
+        week2.task2_curves.run('highway')
+    elif args.week == 'week2_t3':
+        week2.task3.run()
+    elif args.week == 'week2_t4':
+        week2.task4.run()
 
 if __name__ == '__main__':
     main()
