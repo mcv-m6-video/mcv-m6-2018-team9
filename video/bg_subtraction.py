@@ -3,8 +3,14 @@ import cv2 as cv
 
 
 def create_model(images):
-    """
-    images -> image batch, numpy array [n, height, width, channel]
+    """Compute the model parameters from a given batch of images
+
+    Args:
+      images: numpy array with shape [num_ims, height, width, channel]
+
+    Returns:
+      A tuple (mean, std) with the parameters of the new model. Both elements
+      are numpy arrays with same shape as images and dtype='float32'.
 
     """
     mean = np.mean(images, axis=0, dtype='float32')
@@ -13,25 +19,31 @@ def create_model(images):
 
 
 def predict(images, model, alpha, rho=0, return_model=False):
-    """ims -> image batch, numpy array [num_ims, height, width, channel]
-    model -> 2-tuple (mean, std) each numpy array [height, width, channel]
-    alpha -> scalar
+    """Apply background subtraction to a batch of images
 
-    NOTE: when rho is provided and not equal to 0, the input model is updated
-    by the function. If you want to keep the original model, make a copy before
-    invoke the function:
-
-    >>> model_orig = model.copy()  # keep original parameters in model_orig
-    >>> estimation = predict(images, model, 2, rho=0.5)  # model is modified
+    Args:
+      images: numpy array with shape [num_ims, height, width, channel]
+        containing the images to process.
+      model: tuple (mean, std) obtaining with create_model() function.
+      alpha: (float) threshold which controls when a pixel is foreground
+      rho: (float) adaptive factor used to modify model as the batch of images
+        is analized.
+      return_model: (bool) if True, the final model is returned in addition to
+        the predictions.
 
     Returns:
       A numpy array with shape [num_ims, height, width] and dtype 'bool', with
       the background prediction. True denotes the corresponding pixel is
       background and False denotes it is foreground.
 
+      When return_model=True, a second element is returned with the model
+      parameters (mean, std) after analyze the images. Useful to analyze the
+      model adaptation when rho != 0.
+
     """
     n, h, w, _ = images.shape
-    mean, std = model
+    mean = model[0].copy()
+    std = model[1].copy()
     estimation = np.zeros((n, h, w), dtype='bool')
 
     for i, im in enumerate(images):

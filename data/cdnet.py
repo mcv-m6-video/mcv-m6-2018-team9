@@ -6,6 +6,13 @@ import numpy as np
 from PIL import Image
 
 
+LABEL_STATIC = 0
+LABEL_SHADOW = 50
+LABEL_OUTSIDE_ROI = 85
+LABEL_UNKWN_MOTION = 170
+LABEL_MOTION = 255
+
+
 def iter_dataset(dataset, start, end, process_im=None, process_gt=None,
                  bg_th=50, fg_th=255):
 
@@ -76,3 +83,54 @@ def read_dataset(dataset, start=0, end=-1, colorspace='rgb', annotated=True,
         return (np.array(batch_im), np.array(batch_gt))
     else:
         return np.array(batch_im)
+
+
+def read_sequence(week, dataset, split, colorspace='rgb', annotated=True,
+                  bg_th=50, fg_th=255):
+    """Read the sequence of images to use for a given dataset
+
+    Given a CDNET dataset, the sequence of images to read is determined by
+    `week` and `split` parameters.
+
+    Args:
+      week: (str) either 'week1', 'week2' or 'week3'.
+      dataset: (str) either 'highway', 'fall' or 'traffic'.
+      split: (str) either 'train' or 'test'.
+      colorspace: (str) the colorspace for the returned images. Value: one of
+        'rgb', 'ycbr', 'ycbr-only-color', 'hsv', 'hsv-only-color', 'gray'.
+      annotated: (bool) when True, the function return the ground truth labels
+        in addition to the batch of images.
+      bg_th: (int) threshold to set background labels. All pixels with value <=
+        bg_th are labeled as background. Only used when annotated=True.
+      fg_th: (int) threshold to set foreground labels. All pixels with value >=
+        fg_th are labeled as foreground. Only used when annotated=True.
+
+    Returns:
+      A numpy array with shape [n_images, h, w, n_channels] with the images for
+      the selected sequence.
+
+      Additionally, when annotated=True, a second numpy array is returned, with
+      shape [n_images, h, w] and dtype='bool', containing the ground truth
+      annotations.
+
+    """
+
+    if week in ['week1', 'week2', 'week3']:
+        dataset_train_idx = {'highway': (1050, 1200),
+                             'fall': (1460, 1510),
+                             'traffic': (950, 1000)}
+
+        dataset_test_idx = {'highway': (1200, 1350),
+                            'fall': (1510, 1560),
+                            'traffic': (1000, 1050)}
+    else:
+        raise ValueError('Invalid value for week')
+
+    if split == 'train':
+        start, end = dataset_train_idx[dataset]
+    elif split == 'test':
+        start, end = dataset_test_idx[dataset]
+
+    seq = read_dataset(dataset, start=start, end=end, colorspace=colorspace,
+                       annotated=annotated, bg_th=bg_th, fg_th=fg_th)
+    return seq
