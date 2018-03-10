@@ -40,15 +40,20 @@ def imfill(batch, neighb=4):
       filled images.
 
     """
+    # invert connectivity to perform flooding
+    if neighb == 4:
+        flood_neighb = 8
+    else:
+        flood_neighb = 4
+
     result = np.empty_like(batch, dtype='bool')
 
     for i, im in enumerate(batch):
-        __, cc = cv2.connectedComponents(im.astype('uint8'), neighb)
         h, w = im.shape[:2]
-        mask = np.zeros((h + 2, w + 2), dtype='uint8')
-        cv2.floodFill(cc, mask, (0,0), 1, loDiff=0, upDiff=0,
-                      flags=cv2.FLOODFILL_MASK_ONLY)
-        result[i] = ~(mask[1:-1, 1:-1].astype('bool'))
+        padded = np.zeros((h + 2, w + 2), dtype='uint8')
+        padded[1:-1, 1:-1] = im
+        cv2.floodFill(padded, None, (0,0), 3, flags=flood_neighb)
+        result[i] = padded[1:-1, 1:-1] != 3
 
     return result
 
