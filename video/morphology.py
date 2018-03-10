@@ -51,3 +51,20 @@ def imfill(batch, neighb=4):
         result[i] = ~(mask[1:-1, 1:-1].astype('bool'))
 
     return result
+
+
+def filter_small(batch, min_area, neighb=4):
+    result = np.empty_like(batch, dtype='bool')
+
+    for i, im in enumerate(batch):
+        n_labels, cc = cv2.connectedComponents(im.astype('uint8'), neighb)
+        h, w = im.shape[:2]
+        result[i] = np.zeros((h, w), dtype='uint8')
+
+        for lab in range(n_labels):
+            if lab == 0:
+                continue
+            if np.count_nonzero(cc == lab) > min_area:
+                result[i][np.where(cc == lab)] = 1
+
+    return result

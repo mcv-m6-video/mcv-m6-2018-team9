@@ -605,6 +605,28 @@ def plot_precision_recall_curves(tests):
         plt.show()
 
 
+def plot_auc_by_removed_area(tests, p_range, alpha_range):
+    styles = [('c-', 'cyan'), ('m-', 'magenta'), ('g-', 'green'),
+              ('y-', 'yellow')]
+    patches = []
+    for i, test in enumerate(tests):
+        try:
+            assert len(test['data']) is len(p_range)
+        except:
+            raise Exception(
+                'The length of test data should be as long as the range of P')
+        plt.plot(p_range, [auc(dict(title=test['title'], data=data),
+                               'prec-rec', alpha_range)
+                           for data in test['data']], styles[i % 4][0])
+        patch = mpatches.Patch(color=styles[i % 4][1], label=test['title'])
+        patches.append(patch)
+
+    plt.legend(handles=patches)
+    plt.ylabel('AUC')
+    plt.xlabel('P')
+    plt.show()
+
+
 def auc(test, curve_type, thr_range=[]):
     """
     Returns the area under the curve for some measures from a test.
