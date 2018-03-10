@@ -8,7 +8,7 @@ from evaluation import metrics, animations
 def run(dataset):
     train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
                                 annotated=False)
-    test, gt = cdnet.read_sequence('week3', dataset, 'train',
+    test, gt = cdnet.read_sequence('week3', dataset, 'test',
                                    colorspace='gray', annotated=True)
 
     # Adaptive model prediction
