@@ -8,7 +8,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from PIL import Image
 np.set_printoptions(threshold=np.nan)
-
+import sklearn.metrics as skmetrics
 
 
 ALPHA = 10 ** (-12)
@@ -366,6 +366,46 @@ def summarize_tests(tests):
         print('\n' * 2)
 
 
+def find_extrema(summaries, thresholds, metric):
+    """Find min and max metric values for a given list of summaries
+
+    Each summary is a dictionary with TP/FP/FN/TN values, after invoking the
+    `eval_from_mask` function. These summaries must be obtained evaluating a
+    given model with different thresholds, which are passed to the function
+    through the `thresholds` parameter.
+
+    Args:
+      summaries: (list of dict) list of summaries obtained evaluating the
+        output of a model with `eval_from_mask`.
+      thresholds: (list of floats) the corresponding thresholds used in the
+        summaries. Typically thresholds are alpha and rho in bg subtraction
+        models.
+      metric: (str or func) The metric to which find the extrema. Can be
+        'precision', 'recall' or any custom python function.
+
+    Returns:
+      A tuple (thresh_min, metric_min, thresh_max, metric_max), where
+      `thresh_min` is the threshold value that has the minimum with respect to
+      `metric` and `metric_min` is that value. Analogously for the max value.
+
+    """
+    if metric == 'precision':
+        values = [prec(s) for s in summaries]
+        argmax = np.argmax(values)
+        argmin = np.argmin(values)
+    elif metric == 'recall':
+        values = [prec(s) for s in summaries]
+        argmax = np.argmax(values)
+        argmin = np.argmin(values)
+    else:
+        values = [metric(s) for s in summaries]
+        argmax = np.argmax(values)
+        argmin = np.argmin(values)
+
+    return (thresholds[argmin], values[argmin],
+            thresholds[argmax], values[argmax])
+
+
 def plot_metric_history(test_historicals, mode):
     """
     Plots some list of sets of test results by frame. The data to display will
@@ -574,18 +614,19 @@ def plot_results_by_some_param(tests, param_range, param_name, mode):
         print('Invalid option')
 
 
-def plot_precision_recall_curves(tests):
-    """
-    Plots the precision-recall curve for a set of tests.
+def plot_precision_recall_curves(tests, same_plot=False):
+    """Plots the precision-recall curve for a set of tests.
 
     :param tests: (list of dicts) list of tests where each test has the
     following keys:
-
        - title: (str) descriptive string of the test
         - data: (list of dict) results of the test analysis returned by
         eval_test
+    :param same_plot: (bool) when True, all the curves are plot in the same
+      figure.
 
     NOTE: Colors will repeat for more than 4 tests.
+
     """
     styles = [('c-', 'cyan'), ('m-', 'magenta'), ('g-', 'green'),
               ('y-', 'yellow')]
@@ -599,6 +640,13 @@ def plot_precision_recall_curves(tests):
         patch = mpatches.Patch(color=styles[i % 4][1], label=test['title'])
         patches.append(patch)
 
+        if not same_plot:
+            plt.legend(handles=patches)
+            plt.ylabel('Precision')
+            plt.xlabel('Recall')
+            plt.show()
+
+    if same_plot:
         plt.legend(handles=patches)
         plt.ylabel('Precision')
         plt.xlabel('Recall')
@@ -668,6 +716,16 @@ def auc(test, curve_type, thr_range=[]):
     else:
         print('Invalid option')
         return None
+
+
+def auc2(summaries, curve_type):
+    """Alternative implementation for AUC computation using scikit-learn API"""
+    if curve_type == 'prec-rec':
+        precisions = [prec(s) for s in summaries]
+        recalls = [recall(s) for s in summaries]
+        return skmetrics.auc(recalls, precisions, reorder=True)
+    else:
+        raise ValueError("Unknown curve_type")
 
 
 def msen(pred, gt):
