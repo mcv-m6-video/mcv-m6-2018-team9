@@ -28,9 +28,10 @@ def run(dataset):
     # TODO: use parameters for each dataset
 
     data = []
-    clean_datas = []
 
     for bsize in blob_sizes:
+
+        clean_datas = []
 
         for alpha in alpha_values:
             pred = bg_subtraction.predict(test, model, alpha, rho)
