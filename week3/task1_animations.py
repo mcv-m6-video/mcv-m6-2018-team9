@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from data import cdnet
 from video import bg_subtraction, morphology
@@ -14,7 +15,7 @@ def run(dataset):
     # Adaptive model prediction
     model = bg_subtraction.create_model(train)
     # TODO: use parameters for each dataset
-    pred = bg_subtraction.predict(test, model, 1.75, rho=0.10)
+    pred = bg_subtraction.predict(test, model, 2.25, rho=0.20)
 
     # Apply imfill with 4- and 8-connectivity
     filled4 = morphology.imfill(pred, neighb=4)
@@ -30,7 +31,7 @@ def run(dataset):
     summary_fill4 = metrics.eval_from_mask(filled4, gt[:,0], gt[:,1])
     summary_fill8 = metrics.eval_from_mask(filled8, gt[:,0], gt[:,1])
 
-    beta = 10
+    beta = 2
     fsco_pred = metrics.f_score(summary_pred, beta=beta)
     fsco_fill4 = metrics.f_score(summary_fill4, beta=beta)
     fsco_fill8 = metrics.f_score(summary_fill8, beta=beta)
