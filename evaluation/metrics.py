@@ -696,8 +696,13 @@ def auc(test, curve_type, thr_range=[]):
     :return: (int) Area Under the Curve for the specified mode and test
     """
     if curve_type == 'prec-rec':
-        precisions = [prec(data) for data in test['data']]
-        recalls = [recall(data) for data in test['data']]
+        random_precisions = [prec(data) for data in test['data']]
+        random_recalls = [recall(data) for data in test['data']]
+        recalls = [y for y,_ in sorted(zip(random_recalls, random_precisions))]
+        precisions = [x for _,x in
+                      sorted(zip(random_recalls, random_precisions))]
+        recalls = [0] + recalls
+        precisions = [precisions[0]] + precisions
         lower_precisions = [min(precisions[i], precisions[i + 1]) for i in
                             range(len(precisions) - 1)]
         return sum(np.array(lower_precisions) * abs(np.diff(recalls))) \

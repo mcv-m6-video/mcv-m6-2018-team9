@@ -5,48 +5,54 @@ from video import bg_subtraction, morphology
 from evaluation import metrics, animations
 
 
-def run(dataset):
+def run():
 
-    # Hyperparameters values to test
-    if dataset == 'highway':
-        alpha_values = np.arange(1, 8)
-    elif dataset == 'fall':
-        alpha_values = np.arange(1, 8)
-    elif dataset == 'traffic':
-        alpha_values = np.arange(1, 6)
+    experiments = []
 
-    rho = 0.1
-    blob_sizes = range(0, 300, 50)
+    for dataset in ['highway', 'fall', 'traffic']:
+        # Hyperparameters values to test
+        if dataset == 'highway':
+            alpha_values = np.arange(1, 8)
+        elif dataset == 'fall':
+            alpha_values = np.arange(1, 8)
+        elif dataset == 'traffic':
+            alpha_values = np.arange(1, 6)
 
-    train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
-                                annotated=False)
-    test, gt = cdnet.read_sequence('week3', dataset, 'test',
-                                   colorspace='gray', annotated=True)
+        rho = 0.1
+        blob_sizes = range(0, 600, 50)
 
-    # Adaptive model prediction
-    model = bg_subtraction.create_model(train)
-    # TODO: use parameters for each dataset
+        train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
+                                    annotated=False)
+        test, gt = cdnet.read_sequence('week3', dataset, 'test',
+                                       colorspace='gray', annotated=True)
 
-    data = []
-    clean_datas = []
+        # Adaptive model prediction
+        model = bg_subtraction.create_model(train)
+        # TODO: use parameters for each dataset
 
-    for bsize in blob_sizes:
+        data = []
 
-        for alpha in alpha_values:
-            pred = bg_subtraction.predict(test, model, alpha, rho)
+        for bsize in blob_sizes:
 
-            filled4 = morphology.imfill(pred, neighb=4)
+            clean_datas = []
 
-            clean_4 = morphology.filter_small(filled4, bsize, neighb=4)
-            # animations.video_recorder(clean_4, '', 'w3t2_clean')
-            clean_data = metrics.eval_from_mask(clean_4, gt[:,0], gt[:,1])
-            clean_datas.append(clean_data)
+            for alpha in alpha_values:
+                pred = bg_subtraction.predict(test, model, alpha, rho)
 
-        data.append(clean_datas)
+                filled4 = morphology.imfill(pred, neighb=4)
 
-    experiment = dict(title=dataset, data=data)
+                clean_4 = morphology.filter_small(filled4, bsize, neighb=4)
+                # animations.video_recorder(clean_4, '', 'w3t2_clean')
+                clean_data = metrics.eval_from_mask(clean_4, gt[:,0], gt[:,1])
+                clean_datas.append(clean_data)
 
-    metrics.plot_auc_by_removed_area([experiment], blob_sizes, alpha_values)
+            data.append(clean_datas)
+
+        experiment = dict(title=dataset, data=data)
+
+        experiments.append(experiment)
+
+    metrics.plot_auc_by_removed_area(experiments, blob_sizes, alpha_values)
 
         # beta = 1
         #
