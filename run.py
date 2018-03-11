@@ -7,7 +7,11 @@ import week3
 
 def main():
     parser = argparse.ArgumentParser(description='Run the tasks of each week.')
-    parser.add_argument('week', help='Execute the tasks of a week')
+    parser.add_argument('week', help='Select a week')
+    parser.add_argument('-t', '--task', metavar='task', type=int, default=1,
+                        help='Select a task')
+    parser.add_argument('-d', '--dataset', metavar='dataset', default='highway',
+                        help='Select a task')
     args = parser.parse_args()
 
     # Week 1
@@ -27,15 +31,18 @@ def main():
     elif args.week == 'week2_t1':
         week2.task1.run()
     elif args.week == 'week2_t2':
-        week2.task2_curves.run('highway')
+        week2.task2_curves.run(args.dataset)
     elif args.week == 'week2_t3':
         week2.task3.run()
     elif args.week == 'week2_t4':
         week2.task4.run()
 
     # Week 3
-    elif args.week == 'week3':  # TODO: specify task with an extra arg
-        week3.task1_imfill.run('highway')
+    elif args.week == 'week3':
+        if args.task == 1:
+            week3.task1_auc.run(args.dataset)
+        elif args.task == 2:
+            week3.task2.run()
 
 
 if __name__ == '__main__':
