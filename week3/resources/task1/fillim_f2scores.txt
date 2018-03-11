@@ -1,0 +1,16 @@
+This file summarizes the console output of the task1_animations.py script:
+
+Highway F2-score:
+	 no fill: 0.7279779414402389
+	 fill4: 0.7576462547916053
+	 fill8: 0.7718624050986576
+
+Fall F2-score:
+	 no fill: 0.7119803875939491
+	 fill4: 0.7681809244029671
+	 fill8: 0.7777452190117323
+
+Traffic F2-score:
+	 no fill: 0.7646024618865505
+	 fill4: 0.7682692664740355
+	 fill8: 0.7683954842142364

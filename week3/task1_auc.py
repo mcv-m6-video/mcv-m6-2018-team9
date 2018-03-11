@@ -7,8 +7,10 @@ from evaluation import metrics, animations
 
 
 def run(dataset):
+    """Compute PR-curves and compare the 3 methods (pred, fill4, fill8)"""
+
     # Model parameters
-    rho = 0.20
+    rho = dict(highway=0.20, fall=0.10, traffic=0.15)
     alpha_values = np.concatenate([np.linspace(0, 10, 30),
                                    np.linspace(11, 40, 10)])
 
@@ -28,7 +30,7 @@ def run(dataset):
 
     for alpha in alpha_values:
         print(f"{alpha:0.4f}, ", end='', flush=True)
-        pred = bg_subtraction.predict(test, model, alpha, rho=rho)
+        pred = bg_subtraction.predict(test, model, alpha, rho=rho[dataset])
         filled4 = morphology.imfill(pred, neighb=4)
         filled8 = morphology.imfill(pred, neighb=8)
 
@@ -67,18 +69,18 @@ def run(dataset):
     alpha1, rec1, alpha2, rec2 = metrics.find_extrema(
         summaries_fill8, alpha_values, metrics.recall)
     print(f"Recall min: {rec1:0.3f} (alpha {alpha1:0.3f})")
-    print(f"Recall min: {rec2:0.3f} (alpha {alpha2:0.3f})")
+    print(f"Recall max: {rec2:0.3f} (alpha {alpha2:0.3f})")
 
     alpha1, fsco1, alpha2, fsco2 = metrics.find_extrema(
         summaries_fill8, alpha_values, lambda x: metrics.f_score(x, beta=2))
     print(f"F2-score min: {fsco1:0.3f} (alpha {alpha1:0.3f})")
-    print(f"F2-score min: {fsco2:0.3f} (alpha {alpha2:0.3f})")
+    print(f"F2-score max: {fsco2:0.3f} (alpha {alpha2:0.3f})")
 
     # Plot PR-curves for pred / fill4 / fill8 on the same plot
     plot_data = [dict(title=f"no imfill (AUC={auc_pred:0.4f})",
                       data=summaries_pred),
-                 dict(title=f"imfill (AUC={auc_fill4:0.4f})",
+                 dict(title=f"imfill4 (AUC={auc_fill4:0.4f})",
                       data=summaries_fill4),
-                 dict(title=f"imfill (AUC={auc_fill8:0.4f})",
+                 dict(title=f"imfill8 (AUC={auc_fill8:0.4f})",
                       data=summaries_fill8)]
     metrics.plot_precision_recall_curves(plot_data, same_plot=True)
