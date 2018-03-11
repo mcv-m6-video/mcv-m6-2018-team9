@@ -1,8 +1,6 @@
-import numpy as np
-
 from data import cdnet
 from video import bg_subtraction, morphology
-from evaluation import metrics, animations
+from evaluation import metrics
 
 
 def run():
@@ -28,9 +26,7 @@ def run():
         test, gt = cdnet.read_sequence('week3', dataset, 'test',
                                        colorspace='gray', annotated=True)
 
-        # Adaptive model prediction
         model = bg_subtraction.create_model(train)
-        # TODO: use parameters for each dataset
 
         data = []
 

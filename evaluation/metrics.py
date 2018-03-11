@@ -663,10 +663,13 @@ def plot_auc_by_removed_area(tests, p_range, alpha_range):
         except:
             raise Exception(
                 'The length of test data should be as long as the range of P')
-        plt.plot(p_range, [auc(dict(title=test['title'], data=data),
+        aucs = [auc(dict(title=test['title'], data=data),
                                'prec-rec', alpha_range)
-                           for data in test['data']], styles[i % 4][0])
-        patch = mpatches.Patch(color=styles[i % 4][1], label=test['title'])
+                           for data in test['data']]
+        plt.plot(p_range, aucs, styles[i % 4][0])
+        lab = test['title'] + '(max: ' + '{:.2f}'.format(max(aucs)) + ' at P=' \
+              + str(p_range[aucs.index(max(aucs))]) + ')'
+        patch = mpatches.Patch(color=styles[i % 4][1], label=lab)
         patches.append(patch)
 
     plt.legend(handles=patches)
