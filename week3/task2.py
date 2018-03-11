@@ -12,14 +12,16 @@ def run():
     for dataset in ['highway', 'fall', 'traffic']:
         # Hyperparameters values to test
         if dataset == 'highway':
-            alpha_values = np.arange(1, 8)
+            alpha_values = [1, 2, 3, 4, 10, 20, 40]
+            rho = 0.2
         elif dataset == 'fall':
-            alpha_values = np.arange(1, 8)
+            alpha_values = [1, 2, 3, 4, 10, 20, 40]
+            rho = 0.1
         elif dataset == 'traffic':
-            alpha_values = np.arange(1, 6)
+            alpha_values = [1, 2, 3, 10, 40]
+            rho = 0.15
 
-        rho = 0.1
-        blob_sizes = range(0, 600, 50)
+        blob_sizes = range(0, 1001, 50)
 
         train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
                                     annotated=False)
