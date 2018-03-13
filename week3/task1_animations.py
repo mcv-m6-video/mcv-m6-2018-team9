@@ -34,7 +34,6 @@ def run(dataset):
 
     # Adaptive model prediction
     model = bg_subtraction.create_model(train)
-    # TODO: use parameters for each dataset
     pred = bg_subtraction.predict(test, model, alpha[dataset], rho=rho[dataset])
 
     # Apply imfill with 4- and 8-connectivity
