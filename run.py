@@ -43,6 +43,8 @@ def main():
             week3.task1_auc.run(args.dataset)
         elif args.task == 2:
             week3.task2.run()
+        elif args.task == 3:
+            week3.task3.run(args.dataset)
 
 
 if __name__ == '__main__':

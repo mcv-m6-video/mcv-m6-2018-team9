@@ -84,3 +84,14 @@ def filter_small(batch, min_area, neighb=4):
                 result[i][np.where(cc == lab)] = 1
 
     return result
+
+
+def filter_morph(batch, op=None,
+                 st_elem=None):
+    result = np.empty_like(batch, dtype='int8')
+
+    for i, im in enumerate(batch):
+        im = im.astype('float32')
+        result[i] = cv2.morphologyEx(im, op, st_elem)
+
+    return result
