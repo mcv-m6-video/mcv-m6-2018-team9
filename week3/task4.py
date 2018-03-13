@@ -4,18 +4,16 @@ from data import cdnet
 from video import shadow_detection
 
 
-def run():
-    
-    dataset = 'highway'
-    
+def run(dataset):
+
     train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
                                 annotated=False)
     test, gt = cdnet.read_sequence('week3', dataset, 'test',
                                    colorspace='gray', annotated=True, bg_th = 0)
     test_c, gt = cdnet.read_sequence('week3', dataset, 'test',
-                                   colorspace='rgb', annotated=True, bg_th = 0)    
-    
-    
+                                   colorspace='rgb', annotated=True, bg_th = 0)
+
+
     alpha = 1.5
     rho = 0.1
 
@@ -36,4 +34,4 @@ def run():
 
         dic_list.append({'description': (alpha,beta), 'data' : metrics.eval_from_mask(shadow_filter, gt[:,0], gt[:,1])})
 
-    metrics.summarize_tests(dic_list)  
+    metrics.summarize_tests(dic_list)
