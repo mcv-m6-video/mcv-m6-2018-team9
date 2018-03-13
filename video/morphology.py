@@ -59,6 +59,17 @@ def imfill(batch, neighb=4):
 
 
 def filter_small(batch, min_area, neighb=4):
+    """Remove small objects on all frames of a batch of images.
+
+    Objects are grouped by connected components and later filtered by area.
+
+    :param batch: (numpy.array) 3D array containing the batch of 2D images
+    :param min_area: (int) minimum number of pixels of the connected components
+    to be preserved
+    :param neighb: neighbourhood of the connected-components
+
+    :return: numpy.array) 3D array containing the batch of filtered 2D images
+    """
     result = np.empty_like(batch, dtype='bool')
 
     for i, im in enumerate(batch):

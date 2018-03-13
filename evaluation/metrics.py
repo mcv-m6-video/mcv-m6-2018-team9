@@ -654,6 +654,22 @@ def plot_precision_recall_curves(tests, same_plot=False):
 
 
 def plot_auc_by_removed_area(tests, p_range, alpha_range):
+    """Plots the AUC along a set of minimum blob sizes for the previously
+    applied area filter.
+
+    :param tests: (list of dicts) list of tests where each test has the
+    following keys:
+       - title: (str) descriptive string of the test
+        - data: (list of dict) results of the test analysis returned by
+        eval_test
+    :param p_range: (list) minimum blob sizes for the area filter
+    :param alpha_range: (list) used thresholds
+
+    NOTE: Colors will repeat for more than 4 tests.
+    NOTE 2: The length of P range should be equal to the length of the data for
+    each test.
+
+    """
     styles = [('c-', 'cyan'), ('m-', 'magenta'), ('g-', 'green'),
               ('y-', 'yellow')]
     patches = []
