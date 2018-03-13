@@ -1,9 +1,24 @@
+import imageio
 import numpy as np
 import matplotlib.pyplot as plt
 
 from data import cdnet
 from video import bg_subtraction, morphology
 from evaluation import metrics, animations
+
+
+def save_comparison_gif(filename, pred, filled4, filled8):
+    """Create a gif where foreground pixels in:
+
+    - white when are detected as foreground in pred, filled4 and filled8
+    - green when are detected as foreground in filled4 and filled8
+    - red when only is detected as foreground in filled8
+
+    """
+    diff = (filled8 & ~filled4) | pred
+    comp = np.array((diff, filled4, pred), dtype='bool')
+    comp = np.transpose(comp, [1, 2, 3, 0])
+    imageio.mimwrite(filename, (comp * 255).astype('uint8'))
 
 
 def run(dataset):
@@ -26,10 +41,11 @@ def run(dataset):
     filled4 = morphology.imfill(pred, neighb=4)
     filled8 = morphology.imfill(pred, neighb=8)
 
-    # TODO: join both batches in a unique gif image
+    # Save individual gifs and an extra gif which compare them
     animations.video_recorder(pred, '', f"{dataset}_orig")
     animations.video_recorder(filled4, '', f"{dataset}_filled4")
     animations.video_recorder(filled8, '', f"{dataset}_filled8")
+    save_comparison_gif(f"{dataset}_summary.gif", pred, filled4, filled8)
 
     # Print F2-scores
     summary_pred = metrics.eval_from_mask(pred, gt[:,0], gt[:,1])
