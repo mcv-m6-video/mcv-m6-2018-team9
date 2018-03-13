@@ -16,7 +16,7 @@ def run():
             alpha_values = [1, 2, 3, 4, 10, 20, 40]
             rho = 0.1
         elif dataset == 'traffic':
-            alpha_values = [1, 2, 3, 10, 40]
+            alpha_values = [1, 2, 3, 4, 6, 8, 10]
             rho = 0.15
 
         blob_sizes = range(0, 1001, 50)
@@ -37,10 +37,9 @@ def run():
             for alpha in alpha_values:
                 pred = bg_subtraction.predict(test, model, alpha, rho)
 
-                filled4 = morphology.imfill(pred, neighb=4)
+                filled8 = morphology.imfill(pred, neighb=8)
 
-                clean_4 = morphology.filter_small(filled4, bsize, neighb=4)
-                # animations.video_recorder(clean_4, '', 'w3t2_clean')
+                clean_4 = morphology.filter_small(filled8, bsize, neighb=4)
                 clean_data = metrics.eval_from_mask(clean_4, gt[:,0], gt[:,1])
                 clean_datas.append(clean_data)
 
@@ -51,15 +50,4 @@ def run():
         experiments.append(experiment)
 
     metrics.plot_auc_by_removed_area(experiments, blob_sizes, alpha_values)
-
-        # beta = 1
-        #
-        # fsco_pred = metrics.f_score(summary_pred, beta=beta)
-        # fsco_fill4 = metrics.f_score(summary_fill4, beta=beta)
-        # fsco_clean4 = metrics.f_score(summary_clean4, beta=beta)
-        #
-        # print('F-score (beta={}):'.format(beta))
-        # print('\t no fill: {}'.format(fsco_pred))
-        # print('\t fill4: {}'.format(fsco_fill4))
-        # print('\t clean4: {}'.format(fsco_clean4))
 
