@@ -8,7 +8,8 @@ from evaluation import metrics, animations
 
 
 def run(dataset):
-    """Compute PR-curves and compare the 3 methods (pred, fill4, fill8)"""
+    """Compute PR-curves and compare the 4 methods (pred, fill8,
+    area filtering, morphology)"""
 
     if dataset == 'highway':
         bsize = 50
