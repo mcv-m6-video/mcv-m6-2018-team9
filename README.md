@@ -120,7 +120,7 @@ the repository and execute:
 python run.py week3 -t N -d {highway, fall, traffic}
 ```
 
-where N is the number of the task (1 to 4) and the `-d` argument
+where N is the number of the task (1 to 5) and the `-d` argument
 defines the dataset to use. Eg: `python run.py week3 -t 1 -d fall` will
 execute Task 1 for the Fall dataset.
 
