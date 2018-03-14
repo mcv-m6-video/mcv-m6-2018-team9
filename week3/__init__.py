@@ -5,3 +5,4 @@ from . import task1_f1metric
 from . import task2
 from . import task3
 from . import task4
+from . import task5
