@@ -64,3 +64,17 @@ def video_recorder(images, out_path, out_filename, codec=None, out_ext='gif'):
 
         video_out.release()
         cv.destroyAllWindows()
+
+
+def save_comparison_gif(filename, pred, filled4, filled8):
+    """Create a gif where foreground pixels in:
+
+    - white when are detected as foreground in pred, filled4 and filled8
+    - green when are detected as foreground in filled4 and filled8
+    - red when only is detected as foreground in filled8
+
+    """
+    diff = (filled8 & ~filled4) | pred
+    comp = np.array((diff, filled4, pred), dtype='bool')
+    comp = np.transpose(comp, [1, 2, 3, 0])
+    imageio.mimwrite(filename, (comp * 255).astype('uint8'))

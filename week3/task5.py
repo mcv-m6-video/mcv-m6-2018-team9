@@ -29,7 +29,18 @@ def run(dataset):
         bsize = 400
         alpha_values = np.concatenate([np.linspace(0, 10, 30),
                                       np.linspace(11, 40, 10)])
-        se_open = (10, 10)
+        se_close = (15, 15)
+        #diagonal width
+        k = 9
+        #diagonal height
+        l = 30
+        se_open = np.eye(l, dtype=np.uint8)
+        for r in range(0, k):
+            se_open = np.logical_or(se_open,
+                                    np.eye(l, dtype=np.uint8, k=r + 1))
+            se_open = np.logical_or(se_open,
+                                    np.eye(l, dtype=np.uint8, k=r - 1))
+        se_open = np.transpose(se_open.astype(np.uint8))
         shadow_t1 = 0.051
         shadow_t2 = 0.017
 
@@ -58,15 +69,19 @@ def run(dataset):
         filled8 = morphology.imfill(pred, neighb=8)
         clean = morphology.filter_small(filled8, bsize, neighb=4)
 
-        if dataset == 'highway' or dataset == 'fall':
-            #CLOSING
-            st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                                se_close)
-            morph_c = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
-                                              st_elem)
+        #CLOSING
+        st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                            se_close)
+        morph_c = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+                                          st_elem)
+
 
         #OPENING
-        st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
+        if(dataset == 'traffic'):
+            st_elem = se_open
+        else:
+            st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
+
         morph = morphology.filter_morph(morph_c, cv2.MORPH_OPEN,
                                         st_elem)
 
