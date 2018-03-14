@@ -6,7 +6,6 @@ from data import cdnet
 from video import bg_subtraction, morphology
 from evaluation import metrics, animations
 
-
 def run(dataset):
     """Compute PR-curves and compare the 4 methods (pred, fill8,
     area filtering, morphology)"""
@@ -29,14 +28,22 @@ def run(dataset):
         bsize = 400
         alpha_values = np.concatenate([np.linspace(0, 10, 30),
                                       np.linspace(11, 40, 10)])
-        se_open = (10, 10)
+        se_close = (15, 15)
+        k = 9
+        l = 30
+        se_open = np.eye(l, dtype=np.uint8)
+        for r in range(0, k):
+            se_open = np.logical_or(se_open,
+                                    np.eye(l, dtype=np.uint8, k=r + 1))
+            se_open = np.logical_or(se_open,
+                                    np.eye(l, dtype=np.uint8, k=r - 1))
 
     # Model parameters
     rho = dict(highway=0.20, fall=0.10, traffic=0.15)
 
     # Read dataset
-    train = cdnet.read_sequence('week3', dataset, 'train', colorspace='gray',
-                                annotated=False)
+    train = cdnet.read_sequence('week3', dataset, 'train',
+                                colorspace='gray',annotated=False)
     test, gt = cdnet.read_sequence('week3', dataset, 'test',
                                    colorspace='gray', annotated=True)
 
@@ -56,16 +63,15 @@ def run(dataset):
         filled8 = morphology.imfill(pred, neighb=8)
         clean = morphology.filter_small(filled8, bsize, neighb=4)
 
-        if dataset == 'highway' or dataset == 'fall':
-            #CLOSING
-            st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                                se_close)
-            morph_c = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+        #CLOSING
+        st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                            se_close)
+        clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
                                               st_elem)
 
         #OPENING
-        st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
-        morph = morphology.filter_morph(morph_c, cv2.MORPH_OPEN,
+        st_elem = np.transpose(se_open.astype(np.uint8))
+        morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
                                         st_elem)
 
         summary_pred = metrics.eval_from_mask(pred, gt[:,0], gt[:,1])
@@ -84,7 +90,7 @@ def run(dataset):
     auc_clean = metrics.auc(dict(data=summaries_clean), 'prec-rec')
     auc_morph = metrics.auc(dict(data=summaries_morph), 'prec-rec')
     print("\n")
-    print("AUC for Morphology Closing "+str(se_close))
+    print("AUC for different tasks")
     print(f"AUC no imfill: {auc_pred:0.4f}")
     print(f"AUC imfill 8-neighb: {auc_fill8:0.4f}")
     print(f"AUC area filter blob {str(bsize):4}: {auc_clean:0.4f}")
@@ -106,8 +112,8 @@ def run(dataset):
     alpha1, fsco1, alpha2, fsco2 = metrics.find_extrema(
         summaries_morph, alpha_values, lambda x: metrics.f_score(x,
                                                                 beta=1))
-    print(f"F2-score min: {fsco1:0.3f} (alpha {alpha1:0.3f})")
-    print(f"F2-score max: {fsco2:0.3f} (alpha {alpha2:0.3f})")
+    print(f"F1-score min: {fsco1:0.3f} (alpha {alpha1:0.3f})")
+    print(f"F1-score max: {fsco2:0.3f} (alpha {alpha2:0.3f})")
 
     # Plot PR-curves for pred / fill4 / fill8 on the same plot
     plot_data = [dict(title=f"no imfill (AUC={auc_pred:0.4f})",
@@ -121,7 +127,31 @@ def run(dataset):
                       data=summaries_morph),
                  ]
 
+    metrics.plot_precision_recall_curves(plot_data, same_plot=True)
 
+    pred = bg_subtraction.predict(test, model, alpha2,
+                                  rho=rho[dataset])
+    filled8 = morphology.imfill(pred, neighb=8)
+    clean = morphology.filter_small(filled8, bsize, neighb=4)
+
+    # CLOSING
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                        se_close)
+    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+                                          st_elem)
+
+    # OPENING
+    st_elem = np.transpose(se_open.astype(np.uint8))
+    morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
+                                    st_elem)
+
+    # Save individual gifs and an extra gif which compare them
+    animations.video_recorder(pred, '', f"{dataset}_orig")
+    animations.video_recorder(filled8, '', f"{dataset}_filled8")
+    animations.video_recorder(clean, '', f"{dataset}_clean")
+    animations.video_recorder(morph, '', f"{dataset}_morph")
+
+    animations.save_comparison_gif(f"{dataset}_summary.gif", pred, clean, morph)
 
 
 
