@@ -69,8 +69,12 @@ def run(dataset):
         st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
         morph = morphology.filter_morph(morph_c, cv2.MORPH_OPEN,
                                         st_elem)
-        shadowrem = shadow_detection.shadow_batch(test_c, shadow_t1, shadow_t2)
-        final = np.logical_and(morph, shadowrem)
+
+        if dataset == 'fall':
+            final = morph  # shadow removal does not improve results
+        else:
+            shadowrem = shadow_detection.shadow_batch(test_c, shadow_t1, shadow_t2)
+            final = np.logical_and(morph, shadowrem)
 
         summary_pred = metrics.eval_from_mask(pred, gt[:,0], gt[:,1])
         summary_morph = metrics.eval_from_mask(morph, gt[:,0], gt[:,1])
