@@ -37,7 +37,7 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r + 1))
             se_open = np.logical_or(se_open,
                                     np.eye(l, dtype=np.uint8, k=r - 1))
-
+        se_open = np.transpose(se_open.astype(np.uint8))
     # Model parameters
     rho = dict(highway=0.20, fall=0.10, traffic=0.15)
 
@@ -70,7 +70,11 @@ def run(dataset):
                                               st_elem)
 
         #OPENING
-        st_elem = np.transpose(se_open.astype(np.uint8))
+        if (dataset == 'traffic'):
+            st_elem = se_open
+        else:
+            st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
+
         morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
                                         st_elem)
 
