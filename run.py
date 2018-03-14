@@ -45,6 +45,10 @@ def main():
             week3.task2.run()
         elif args.task == 3:
             week3.task3.run(args.dataset)
+        elif args.task == 4:
+            week3.task4.run(args.dataset)
+        elif args.task == 5:
+            week3.task5.run(args.dataset)
 
 
 if __name__ == '__main__':

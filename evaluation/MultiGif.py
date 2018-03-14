@@ -56,7 +56,7 @@ def make_gif(BatchList, Size):
     #### All comprovations have been done! More could be added
 
     #Define the grid for the plottings 
-    f, axarr = plt.subplots(Size[0], Size[1])
+    f, axarr = plt.subplots(Size[0], Size[1], figsize=(15,15))
     
     ## shutdown axes
     axes = axarr.flatten()

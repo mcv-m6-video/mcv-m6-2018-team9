@@ -53,8 +53,8 @@ results:
 
 - Week 1: [Introduction to the datasets, evaluation metrics and optical
   flow analysis](https://docs.google.com/presentation/d/1VQUlbHy3PaaCxYBiEG8HufPkYlS-PI2vXVjm6JIfX0Q/edit?usp=sharing).
-- Week 2: Background estimation and Stauffer & Grimson's approach.
-- Week 3: Foreground segmentation, filtering and shadow removal.
+- Week 2: [Background estimation and Stauffer & Grimson's approach](https://docs.google.com/presentation/d/1aI1owlfyb7za4ij8lUc4j1mNEmD4aXV679oRF2lDiBk/edit#slide=id.p)
+- Week 3: [Foreground segmentation, filtering and shadow removal](https://docs.google.com/presentation/d/1bLqRug-OUk6e5cf1uCqNKUt3DlqElFyYameDbwt_n-A/edit?usp=sharing)
 - Week 4: Optical flow and video stabilization.
 - Week 5: Region tracking and Kalman filter.
 - Week 6: Pipeline assembly and performance evaluation.
@@ -100,8 +100,34 @@ python run.py week2_tN
 
 where N is the number of the task (1 to 4).
 
+### Week 3 Code
+
+Prerequisites:
+
+* We use the same datasets as Week 2 (see instructions above).
+* We have added new python dependencies for the project, namely
+  `scikit-image`, for morphology operations. Update the environment by
+  running again:
+
+```bash
+pip install -r requirements.txt
+```
+
+To run each task of this week, `cd` to the root folder of
+the repository and execute:
+
+```bash
+python run.py week3 -t N -d {highway, fall, traffic}
+```
+
+where N is the number of the task (1 to 5) and the `-d` argument
+defines the dataset to use. Eg: `python run.py week3 -t 1 -d fall` will
+execute Task 1 for the Fall dataset.
+
+
 ## Authors
 
 - [Ignasi Mas](mailto:ignasi.masm@e-campus.uab.cat)
 - [Hugo Prol](mailto:hugo.prol@e-campus.uab.cat)
 - [Jordi Puyoles](mailto:jordi.puyoles@e-campus.uab.cat)
+- [Marc Grau](mailto:marc.grau@e-campus.uab.cat)
