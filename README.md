@@ -124,6 +124,13 @@ where N is the number of the task (1 to 5) and the `-d` argument
 defines the dataset to use. Eg: `python run.py week3 -t 1 -d fall` will
 execute Task 1 for the Fall dataset.
 
+### Week 4 Code
+
+Prerequisites:
+
+* Download the [KITTI dataset for Optical Flow  2012](http://kitti.is.tue.mpg.de/kitti/data_stereo_flow.zip) and unzip into the `datasets/` folder. You should have then two folders:
+  `datasets/data_stereo_flow/{training, testing}`.
+
 
 ## Authors
 
