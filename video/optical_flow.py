@@ -95,3 +95,56 @@ def plot_map(im, flow, size=None, title=''):
                color='#ff6600ff')
     plt.show()
     return fig
+
+
+def patch_correlation(template, im):
+    """Returns: (x, y) displacement vector
+    """
+    # https://docs.opencv.org/3.4.1/df/dfb/group__imgproc__object.html
+
+    # TODO: deal with multiple maxima!! It should choose the most centered...
+    result = cv2.matchTemplate(im, template, cv2.TM_SQDIFF)
+    displ = np.unravel_index(np.argmin(result), result.shape)
+    return (displ[1], displ[0])
+
+
+def block_matching(im1, im2, block_size=16, max_motion=16):
+
+    search_area = 2 * max_motion + block_size
+    block_rows = int(im1.shape[0] / block_size)
+    block_cols = int(im1.shape[1] / block_size)
+
+    # Add extra row / column with the remainder pixels, when large enough
+    if im1.shape[0] % block_size >= 8:
+        block_rows += 1
+
+    if im1.shape[1] % block_size >= 8:
+        block_cols += 1
+
+    result = np.zeros((im1.shape[0], im1.shape[1], 2), dtype='int16')
+    for i in range(block_rows):
+        for j in range(block_cols):
+            x1 = j * block_size
+            y1 = i * block_size
+            xa = x1 - max_motion
+            ya = y1 - max_motion
+            patch = im1[y1:y1 + block_size, x1:x1 + block_size]
+            area = im2[max(ya, 0):(ya + search_area),
+                       max(xa, 0):(xa + search_area)]
+            x2, y2 = patch_correlation(patch, area)
+            motion = (max(xa, 0) + x2 - x1, max(ya, 0) + y2 - y1)
+
+            result[y1 : y1 + block_size, x1 : x1 + block_size] = motion
+
+    return result
+
+
+def block_matching_sequence(seq, block_size=16, max_motion=16):
+
+    n, h, w, _ = seq.shape
+    result = np.empty((n, h, w, 2), dtype='int16')
+    for i in range(seq.shape[0] - 1):
+        result[i] = block_matching(seq[i], seq[i+1], block_size=block_size,
+                                   max_motion=max_motion)
+
+    return result
