@@ -155,6 +155,98 @@ def block_matching_sequence(seq, block_size=16, max_motion=16):
     return result
 
 
+def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
+                 track_specs={}):
+    track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
+                                           qualityLevel=q_feat,
+                                           minDistance=feat_dist,
+                                           **corner_specs)
+    out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
+                                                  winSize=wsize, maxLevel=0,
+                                                  criteria=
+                                                  (cv2.TERM_CRITERIA_EPS |
+                                                   cv2.TERM_CRITERIA_COUNT,
+                                                   10, 0.03), **track_specs)
+    shap = list(im1.shape)
+    shap = shap + [2]
+    shap = tuple(shap)
+    flow = np.zeros(shap)
+    flow[track_points, :] = out_points - track_points
+
+    return flow
+
+
+def lk_sequence(seq, num_feat, q_feat, feat_dist, wsize, corner_specs={},
+                track_specs={}):
+
+    n, h, w, _ = seq.shape
+    result = np.empty((n, h, w, 2), dtype='int16')
+    for i in range(seq.shape[0] - 1):
+        result[i] = lucas_kanade(seq[i], seq[i+1], num_feat, q_feat, feat_dist,
+                                 wsize, corner_specs, track_specs)
+
+    return result
+
+
+def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
+                     corner_specs={}, track_specs={}):
+    track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
+                                           qualityLevel=q_feat,
+                                           minDistance=feat_dist,
+                                           **corner_specs)
+    out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
+                                                  winSize=wsize,
+                                                  maxLevel=levels, criteria=
+                                                  (cv2.TERM_CRITERIA_EPS |
+                                                   cv2.TERM_CRITERIA_COUNT,
+                                                   10, 0.03), **track_specs)
+    shap = list(im1.shape)
+    shap = shap + [2]
+    shap = tuple(shap)
+    flow = np.zeros(shap)
+    flow[track_points, :] = out_points - track_points
+
+    return flow
+
+
+def lk_pyr_sequence(seq, num_feat, q_feat, feat_dist, wsize, pyr_levels,
+                    corner_specs={}, track_specs={}):
+
+    n, h, w, _ = seq.shape
+    result = np.empty((n, h, w, 2), dtype='int16')
+    for i in range(seq.shape[0] - 1):
+        result[i] = lucas_kanade_pyr(seq[i], seq[i+1], num_feat, q_feat,
+                                     feat_dist, wsize, pyr_levels, corner_specs,
+                                     track_specs)
+
+    return result
+
+
+def farneback(im1, im2, levels, pyr_sc, wsize, n_iter, poly_n, p_sigma, flag):
+    flow = None
+
+    flow = cv2.calcOpticalFlowFarneback(im1, im2, flow, pyr_scale=pyr_sc,
+                                        levels=levels, winsize=wsize,
+                                        iterations=n_iter, poly_n=poly_n,
+                                        poly_sigma=p_sigma,
+                                        flags=flag)
+    return flow
+
+
+def farneback_sequence(seq, levels, pyr_sc, wsize, n_iter, poly_n, p_sigma,
+                       gauss):
+    flag = cv2.OPTFLOW_FARNEBACK_GAUSSIAN if gauss \
+        else cv2.OPTFLOW_USE_INITIAL_FLOW
+
+    n, h, w, _ = seq.shape
+    result = np.empty((n, h, w, 2), dtype='int16')
+    for i in range(seq.shape[0] - 1):
+        result[i] = farneback(seq[i], seq[i + 1], levels, pyr_sc, wsize, n_iter,
+                              poly_n, p_sigma, flag)
+
+    return result
+
+
 def stabilize(ims):
 
     #fix first image
