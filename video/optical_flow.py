@@ -154,20 +154,21 @@ def block_matching_sequence(seq, block_size=16, max_motion=16):
 
     return result
 
+
 def stabilize(ims):
-    
+
     #fix first image
     #for each image, match with previous one
-    
+
     stabilized_images= np.zeros(ims.shape)
     stabilized_images[0] = ims[0]
     current_image = ims[0]
 
     for i in range(1, ims.shape[0]):
-        
+
         of = optical_flow.block_matching(current_image, ims[i])
         u,v = of[:,:,0] , of[:,:,1]
-        
+
         tform = SimilarityTransform(translation=(-u.mean() , -v.mean() ))
         current_image = img_as_ubyte(warp(ims[i], tform.inverse))
         stabilized_images[i] = current_image
