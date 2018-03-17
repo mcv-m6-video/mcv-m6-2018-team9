@@ -752,7 +752,7 @@ def auc2(summaries, curve_type):
         raise ValueError("Unknown curve_type")
 
 
-def msen(pred, gt):
+def optflow_metrics(pred, gt):
     """
         msen
 
@@ -787,3 +787,43 @@ def msen(pred, gt):
     pepn = 100 * (1 - np.mean(hit))
 
     return msen, pepn, img_err, vect_err
+
+
+# Backwards-compatibility with Week 1
+msen = optflow_metrics
+
+
+def plot_optflow_errors(err_vect, err_img, seq_name):
+    """Plot summary and qualitative results for an optical flow prediction
+
+    Plots shown:
+      - a histogram with the summary of the errors, classified by magnitude.
+      - an image illustrating the error magnitude made for each pixel position.
+
+    Args:
+      `err_vect` and `err_img` are values returned by the `optflow_metrics`
+      function.
+      seq_name: (str) number of the sequence to be shown in the plots.
+
+    """
+    plt.figure(1)
+    cm = plt.cm.get_cmap('viridis')
+    n, bins, patches = plt.hist(err_vect, bins=25, normed=1, stacked=False)
+    bins = 100*bins/np.sum(bins)
+
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+    col = bin_centers - min(bin_centers)
+    col /= max(col)
+    for c, p in zip(col, patches):
+        plt.setp(p, 'facecolor', cm(c))
+
+    plt.xlabel('Motion Error Magnitude')
+    plt.ylabel('Nº of Pixels')
+    plt.title(f'MSEN {seq_name}')
+    plt.show()
+
+    plt.figure(2)
+    plt.title(f'Motion Error Image reconstruction ({seq_name})')
+    plt.imshow(err_img)
+    plt.colorbar()
+    plt.show()
