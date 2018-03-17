@@ -64,7 +64,7 @@ def plot_map(im, flow, size=None, title=''):
     """Plot an optical flow map on top of their corresponding image
 
     Args:
-      im: (numpy array) image in grayscale or color
+      im: (numpy array) numpy array image in grayscale or color.
       flow: (numpy array) optical flow map for `im`
       size: (optional, int) the size to use in the quantization process. When
         specified, the image is divided into non-overlapping square areas, and
@@ -79,8 +79,9 @@ def plot_map(im, flow, size=None, title=''):
         start = 0
         size = 1
 
-    if im.ndim == 3:
+    if im.ndim == 3 and im.shape[2] == 3:
         im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+    im = np.squeeze(im)  # grayscale image shapes: [h, w, 1] -> [h, w]
 
     h, w = flow.shape[:2]
     x, y = np.meshgrid(np.arange(w) * size + start,
@@ -121,7 +122,7 @@ def block_matching(im1, im2, block_size=16, max_motion=16):
     if im1.shape[1] % block_size >= 8:
         block_cols += 1
 
-    result = np.zeros((im1.shape[0], im1.shape[1], 2), dtype='int16')
+    result = np.zeros((im1.shape[0], im1.shape[1], 3), dtype='int16')
     for i in range(block_rows):
         for j in range(block_cols):
             x1 = j * block_size
@@ -132,7 +133,7 @@ def block_matching(im1, im2, block_size=16, max_motion=16):
             area = im2[max(ya, 0):(ya + search_area),
                        max(xa, 0):(xa + search_area)]
             x2, y2 = patch_correlation(patch, area)
-            motion = (max(xa, 0) + x2 - x1, max(ya, 0) + y2 - y1)
+            motion = (max(xa, 0) + x2 - x1, max(ya, 0) + y2 - y1, 1)
 
             result[y1 : y1 + block_size, x1 : x1 + block_size] = motion
 
@@ -142,7 +143,7 @@ def block_matching(im1, im2, block_size=16, max_motion=16):
 def block_matching_sequence(seq, block_size=16, max_motion=16):
 
     n, h, w, _ = seq.shape
-    result = np.empty((n, h, w, 2), dtype='int16')
+    result = np.empty((n - 1, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = block_matching(seq[i], seq[i+1], block_size=block_size,
                                    max_motion=max_motion)
