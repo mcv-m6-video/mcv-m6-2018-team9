@@ -6,7 +6,6 @@ from skimage.transform import SimilarityTransform
 from skimage import img_as_ubyte
 
 
-
 def read_file(path):
     """Read an optical flow map from disk
 
@@ -159,19 +158,21 @@ def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
                  track_specs={}):
     track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
                                            qualityLevel=q_feat,
-                                           minDistance=feat_dist,
-                                           **corner_specs)
+                                           minDistance=feat_dist)
     # Point coordinates are swapped!
     track_points = np.squeeze(track_points, axis=1)
     track_points = np.flip(track_points, axis=1)
-    track_points = track_points.astype(int)
 
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize, maxLevel=0,
                                                   criteria=
                                                   (cv2.TERM_CRITERIA_EPS |
                                                    cv2.TERM_CRITERIA_COUNT,
-                                                   10, 0.03), **track_specs)
+                                                   10, 0.03))
+
+    track_points = track_points.astype(int)
+    out_points = out_points.astype(int)
+
     shap = list(im1.shape)
     shap = shap + [2]
     shap = tuple(shap)
@@ -199,19 +200,20 @@ def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
                      corner_specs={}, track_specs={}):
     track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
                                            qualityLevel=q_feat,
-                                           minDistance=feat_dist,
-                                           **corner_specs)
+                                           minDistance=feat_dist)
     # Point coordinates are swapped!
     track_points = np.squeeze(track_points, axis=1)
     track_points = np.flip(track_points, axis=1)
-    track_points = track_points.astype(int)
 
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize,
-                                                  maxLevel=levels, criteria=
+                                                  maxLevel=levels,
+                                                  criteria=
                                                   (cv2.TERM_CRITERIA_EPS |
                                                    cv2.TERM_CRITERIA_COUNT,
-                                                   10, 0.03), **track_specs)
+                                                   10, 0.03))
+    track_points = track_points.astype(int)
+    out_points = out_points.astype(int)
     shap = list(im1.shape)
     shap = shap + [2]
     shap = tuple(shap)
