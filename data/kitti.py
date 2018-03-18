@@ -33,8 +33,9 @@ def read_gt_file(path):
 def read_sequence(number, annotated=True):
     """Read a train sequence from the KITTI dataset
 
-    The sequence belongs to the image_0 folder, which is a subdirectory of the
-    training folder.
+    The sequence belongs to the `image_0` folder, which is a subdirectory of
+    the `training` folder. For the ground truth, we use the `flow_noc`
+    directory, as stated in the exercises for Week 1 (pre-slides page 33).
 
     Args:
       number: (int) it identifies the sequence to read. For example, for
@@ -55,7 +56,7 @@ def read_sequence(number, annotated=True):
     kitti_dir = os.path.join(os.path.dirname(__file__), '..', 'datasets',
                              'data_stereo_flow')
     train_dir = os.path.join(kitti_dir, 'training', 'image_0')
-    gt_dir = os.path.join(kitti_dir, 'training', 'flow_noc')  # TODO: confirm!!
+    gt_dir = os.path.join(kitti_dir, 'training', 'flow_noc')
 
     # Paths to images to load
     im0_path = os.path.join(train_dir, f'{number:06d}_10.png')
