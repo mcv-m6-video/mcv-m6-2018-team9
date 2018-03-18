@@ -1,0 +1,42 @@
+bsize 4, maxm 4: 52.37
+bsize 4, maxm 8: 55.50
+bsize 4, maxm 16: 62.01
+bsize 4, maxm 32: 68.23
+bsize 4, maxm 48: 71.94
+bsize 4, maxm 64: 74.18
+bsize 8, maxm 4: 41.96
+bsize 8, maxm 8: 36.40
+bsize 8, maxm 16: 37.76
+bsize 8, maxm 32: 40.03
+bsize 8, maxm 48: 41.48
+bsize 8, maxm 64: 42.60
+bsize 16, maxm 4: 34.52
+bsize 16, maxm 8: 25.53
+bsize 16, maxm 16: 23.48
+bsize 16, maxm 32: 22.89
+bsize 16, maxm 48: 23.81
+bsize 16, maxm 64: 24.26
+bsize 32, maxm 4: 32.65
+bsize 32, maxm 8: 24.08
+bsize 32, maxm 16: 21.97
+bsize 32, maxm 32: 18.98
+bsize 32, maxm 48: 18.94
+bsize 32, maxm 64: 18.94
+bsize 48, maxm 4: 32.86
+bsize 48, maxm 8: 25.73
+bsize 48, maxm 16: 25.83
+bsize 48, maxm 32: 23.30
+bsize 48, maxm 48: 24.00
+bsize 48, maxm 64: 24.00
+bsize 64, maxm 4: 35.71
+bsize 64, maxm 8: 28.91
+bsize 64, maxm 16: 27.08
+bsize 64, maxm 32: 24.33
+bsize 64, maxm 48: 24.27
+bsize 64, maxm 64: 24.27
+Best parameters for forward compensation:
+- Block size: 32
+- Max motion: 48
+With a PEPN = 18.94 (PCPN = 81.06)
+
+(Also Block size: 32, Max motion: 64)

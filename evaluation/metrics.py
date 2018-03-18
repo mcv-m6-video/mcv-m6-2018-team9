@@ -779,8 +779,8 @@ def optflow_metrics(pred, gt):
     vect_err = np.sqrt(squared_err)
     hit = vect_err < 3.0
 
-    print('Valid GT Vectors: ', hit.size)
-    print('Valid Error Vectors (< 3): ', hit.sum())
+    # print('Valid GT Vectors: ', hit.size)
+    # print('Valid Error Vectors (< 3): ', hit.sum())
 
     img_err[valid] = vect_err
     msen = np.mean(vect_err)
@@ -827,3 +827,37 @@ def plot_optflow_errors(err_vect, err_img, seq_name):
     plt.imshow(err_img)
     plt.colorbar()
     plt.show()
+
+
+def plot_gridsearch_3d(x_values, y_values, z_surf, xlabel='', ylabel='',
+                       zlabel='', title=''):
+    """Plot a grid search over 2 parameters given some scoring criterion
+
+    Args:
+      x_values: (list, numpy array 1D) sequence of values for the first
+        hyperparameter
+      y_values: (list, numpy array 1D) sequence of values for the second
+        hyperparameter
+      z_surf: (numpy array 2D) scores obtained for each combination of x and y
+        values.
+      xlabel, ylabel, zlabel: (str) labels for the corresponding axes
+      title: (str) title of the plot
+
+    """
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+
+    # https://matplotlib.org/examples/mplot3d/surface3d_demo.html
+    X, Y = np.meshgrid(x_values, y_values)
+    surf = ax.plot_surface(X, Y, z_surf, cmap='plasma',
+                           linewidth=0, antialiased=True)
+    fig.colorbar(surf)
+
+    ax.set_xlabel(xlabel, size='large', weight='bold')
+    ax.set_ylabel(ylabel, size='large', weight='bold')
+    ax.set_zlabel(zlabel, size='large', weight='bold')
+
+    plt.title(title)
+    plt.show()
+
+    return fig

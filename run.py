@@ -3,6 +3,7 @@ import argparse
 import week1
 import week2
 import week3
+import week4
 
 
 def main():
@@ -50,6 +51,10 @@ def main():
         elif args.task == 5:
             week3.task5.run(args.dataset)
 
+    elif args.week == 'week4':
+        if args.task == 1:
+            week4.task1_gridsearch.run()
+            week4.task1_qualitative.run()
 
 if __name__ == '__main__':
     main()
