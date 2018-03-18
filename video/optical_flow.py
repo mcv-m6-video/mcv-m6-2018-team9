@@ -277,7 +277,7 @@ def stabilize(ims):
         u,v = of[:,:,0] , of[:,:,1]
 
         tform = SimilarityTransform(translation=(-u.mean() , -v.mean() ))
-        current_image = img_as_ubyte(warp(ims[i], tform.inverse))
+        current_image = (255*warp(ims[i], tform.inverse)).astype('uint8')
         stabilized_images[i] = current_image
 
     return stabilized_images
