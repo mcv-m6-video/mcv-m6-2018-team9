@@ -174,11 +174,12 @@ def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
     out_points = out_points.astype(int)
 
     shap = list(im1.shape)
-    shap = shap + [2]
+    shap = shap + [3]
     shap = tuple(shap)
     flow = np.zeros(shap)
     for a, b in zip(track_points, out_points):
-        flow[a[0], a[1], :] = b - a
+        flow[a[0], a[1], 0:2] = b - a
+        flow[a[0], a[1], 2] = 1
 
     return flow
 
@@ -188,7 +189,7 @@ def lk_sequence(seq, num_feat, q_feat, feat_dist, wsize, corner_specs={},
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
-    result = np.empty((n, h, w, 2), dtype='int16')
+    result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = lucas_kanade(seq[i], seq[i+1], num_feat, q_feat, feat_dist,
                                  wsize, corner_specs, track_specs)
@@ -215,11 +216,12 @@ def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
     track_points = track_points.astype(int)
     out_points = out_points.astype(int)
     shap = list(im1.shape)
-    shap = shap + [2]
+    shap = shap + [3]
     shap = tuple(shap)
     flow = np.zeros(shap)
     for a, b in zip(track_points, out_points):
-        flow[a[0], a[1], :] = b - a
+        flow[a[0], a[1], 0:2] = b - a
+        flow[a[0], a[1], 2] = 1
 
     return flow
 
@@ -229,7 +231,7 @@ def lk_pyr_sequence(seq, num_feat, q_feat, feat_dist, wsize, pyr_levels,
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
-    result = np.empty((n, h, w, 2), dtype='int16')
+    result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = lucas_kanade_pyr(seq[i], seq[i+1], num_feat, q_feat,
                                      feat_dist, wsize, pyr_levels, corner_specs,
