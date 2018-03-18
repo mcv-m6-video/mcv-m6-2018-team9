@@ -161,6 +161,11 @@ def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
                                            qualityLevel=q_feat,
                                            minDistance=feat_dist,
                                            **corner_specs)
+    # Point coordinates are swapped!
+    track_points = np.squeeze(track_points, axis=1)
+    track_points = np.flip(track_points, axis=1)
+    track_points = track_points.astype(int)
+
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize, maxLevel=0,
                                                   criteria=
@@ -171,7 +176,8 @@ def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
     shap = shap + [2]
     shap = tuple(shap)
     flow = np.zeros(shap)
-    flow[track_points, :] = out_points - track_points
+    for a, b in zip(track_points, out_points):
+        flow[a[0], a[1], :] = b - a
 
     return flow
 
@@ -180,6 +186,7 @@ def lk_sequence(seq, num_feat, q_feat, feat_dist, wsize, corner_specs={},
                 track_specs={}):
 
     n, h, w, _ = seq.shape
+    seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 2), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = lucas_kanade(seq[i], seq[i+1], num_feat, q_feat, feat_dist,
@@ -194,6 +201,11 @@ def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
                                            qualityLevel=q_feat,
                                            minDistance=feat_dist,
                                            **corner_specs)
+    # Point coordinates are swapped!
+    track_points = np.squeeze(track_points, axis=1)
+    track_points = np.flip(track_points, axis=1)
+    track_points = track_points.astype(int)
+
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize,
                                                   maxLevel=levels, criteria=
@@ -204,7 +216,8 @@ def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
     shap = shap + [2]
     shap = tuple(shap)
     flow = np.zeros(shap)
-    flow[track_points, :] = out_points - track_points
+    for a, b in zip(track_points, out_points):
+        flow[a[0], a[1], :] = b - a
 
     return flow
 
@@ -213,6 +226,7 @@ def lk_pyr_sequence(seq, num_feat, q_feat, feat_dist, wsize, pyr_levels,
                     corner_specs={}, track_specs={}):
 
     n, h, w, _ = seq.shape
+    seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 2), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = lucas_kanade_pyr(seq[i], seq[i+1], num_feat, q_feat,
@@ -239,6 +253,7 @@ def farneback_sequence(seq, levels, pyr_sc, wsize, n_iter, poly_n, p_sigma,
         else cv2.OPTFLOW_USE_INITIAL_FLOW
 
     n, h, w, _ = seq.shape
+    seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 2), dtype='int16')
     for i in range(seq.shape[0] - 1):
         result[i] = farneback(seq[i], seq[i + 1], levels, pyr_sc, wsize, n_iter,
