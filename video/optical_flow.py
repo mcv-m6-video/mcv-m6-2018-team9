@@ -266,22 +266,31 @@ def farneback_sequence(seq, levels, pyr_sc, wsize, n_iter, poly_n, p_sigma,
     return result
 
 
-def stabilize(ims):
-
+def stabilize(ims, mode = "bac"):
+    
     #fix first image
     #for each image, match with previous one
-
+    
     stabilized_images= np.zeros(ims.shape)
-    stabilized_images[0] = ims[0]
-    current_image = ims[0]
+    n_im = ims.shape[0]
+    
+    if(mode == "bac"):
+        ind = ims.shape[0]
+        sign = 1
+    else:
+        ind = 1
+        sign = -1
+        
+    stabilized_images[n_im-ind] = ims[n_im-ind]
+    current_image = ims[n_im-ind]
 
     for i in range(1, ims.shape[0]):
-
-        of = optical_flow.block_matching(current_image, ims[i])
+        
+        of = optical_flow.block_matching(current_image, ims[n_im-ind + sign*i])
         u,v = of[:,:,0] , of[:,:,1]
-
+        
         tform = SimilarityTransform(translation=(-u.mean() , -v.mean() ))
-        current_image = img_as_ubyte(warp(ims[i], tform.inverse))
-        stabilized_images[i] = current_image
+        current_image = (255*warp(ims[n_im-ind + sign*i], tform.inverse)).astype('uint8')
+        stabilized_images[n_im-ind + sign*i] = current_image
 
     return stabilized_images
