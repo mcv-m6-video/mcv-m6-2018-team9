@@ -55,6 +55,9 @@ def main():
         if args.task == 1:
             week4.task1_gridsearch.run()
             week4.task1_qualitative.run()
+        if args.task == 2:
+            week4.task2_ngiaho.run('traffic')
+
 
 if __name__ == '__main__':
     main()

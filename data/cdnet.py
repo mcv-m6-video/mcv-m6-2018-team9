@@ -115,7 +115,7 @@ def read_sequence(week, dataset, split, colorspace='rgb', annotated=True,
 
     """
 
-    if week in ['week1', 'week2', 'week3']:
+    if week in ['week1', 'week2', 'week3','week4']:
         dataset_train_idx = {'highway': (1050, 1200),
                              'fall': (1460, 1510),
                              'traffic': (950, 1000)}
