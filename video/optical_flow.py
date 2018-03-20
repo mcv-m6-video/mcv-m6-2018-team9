@@ -154,14 +154,11 @@ def block_matching_sequence(seq, block_size=16, max_motion=16):
     return result
 
 
-def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
-                 track_specs={}):
-    track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
-                                           qualityLevel=q_feat,
-                                           minDistance=feat_dist)
-    # Point coordinates are swapped!
-    track_points = np.squeeze(track_points, axis=1)
-    track_points = np.flip(track_points, axis=1)
+def lucas_kanade(im1, im2, valid_mask, wsize, track_specs={}):
+
+    track_points = np.swapaxes(np.array(np.where(valid_mask != 0)), 0, 1)
+
+    track_points = track_points.astype(np.float32)
 
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize, maxLevel=0,
@@ -184,27 +181,23 @@ def lucas_kanade(im1, im2, num_feat, q_feat, feat_dist, wsize, corner_specs={},
     return flow
 
 
-def lk_sequence(seq, num_feat, q_feat, feat_dist, wsize, corner_specs={},
-                track_specs={}):
+def lk_sequence(seq, valid_mask, wsize, track_specs={}):
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
-        result[i] = lucas_kanade(seq[i], seq[i+1], num_feat, q_feat, feat_dist,
-                                 wsize, corner_specs, track_specs)
+        result[i] = lucas_kanade(seq[i], seq[i+1], valid_mask, wsize,
+                                 track_specs)
 
     return result
 
 
-def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
-                     corner_specs={}, track_specs={}):
-    track_points = cv2.goodFeaturesToTrack(im1, maxCorners=num_feat,
-                                           qualityLevel=q_feat,
-                                           minDistance=feat_dist)
-    # Point coordinates are swapped!
-    track_points = np.squeeze(track_points, axis=1)
-    track_points = np.flip(track_points, axis=1)
+def lucas_kanade_pyr(im1, im2, valid_mask,  wsize, levels, track_specs={}):
+
+    track_points = np.swapaxes(np.array(np.where(valid_mask != 0)), 0, 1)
+
+    track_points = track_points.astype(np.float32)
 
     out_points, __, __ = cv2.calcOpticalFlowPyrLK(im1, im2, track_points, None,
                                                   winSize=wsize,
@@ -226,16 +219,14 @@ def lucas_kanade_pyr(im1, im2, num_feat, q_feat, feat_dist, wsize, levels,
     return flow
 
 
-def lk_pyr_sequence(seq, num_feat, q_feat, feat_dist, wsize, pyr_levels,
-                    corner_specs={}, track_specs={}):
+def lk_pyr_sequence(seq, valid_mask, wsize, pyr_levels, track_specs={}):
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
-        result[i] = lucas_kanade_pyr(seq[i], seq[i+1], num_feat, q_feat,
-                                     feat_dist, wsize, pyr_levels, corner_specs,
-                                     track_specs)
+        result[i] = lucas_kanade_pyr(seq[i], seq[i+1], valid_mask, wsize,
+                                     pyr_levels, track_specs)
 
     return result
 
