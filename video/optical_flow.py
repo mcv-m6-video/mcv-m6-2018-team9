@@ -281,7 +281,6 @@ def stabilize(ims_, gt = None, mode = "bac"):
     stabilized_images= np.zeros(ims_.shape).astype('uint8')
     masks = np.zeros(ims_.shape[:3], dtype=bool)
     
-    
     n_im = ims_.shape[0]
     
     if(mode == "bac"):
@@ -301,7 +300,7 @@ def stabilize(ims_, gt = None, mode = "bac"):
         
         stabilized_gt = np.zeros(gt.shape, dtype = bool)
         stabilized_gt[n_im-ind] = gt[n_im-ind]
-        #current_gt = gt[n_im-ind]
+
         bmsk = gt[n_im-ind][0]
         fgmsk = gt[n_im-ind][1]
 
@@ -315,8 +314,6 @@ def stabilize(ims_, gt = None, mode = "bac"):
         
         current_mask = warp(true_mask, tform.inverse).astype('bool')
 
-
-        
         if type(None) != type(gt):
             
             bmsk = warp(gt[n_im-ind + sign*i][0], tform.inverse).astype('bool')
