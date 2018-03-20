@@ -257,31 +257,81 @@ def farneback_sequence(seq, levels, pyr_sc, wsize, n_iter, poly_n, p_sigma,
     return result
 
 
-def stabilize(ims, mode = "bac"):
-    
+
+def stabilize(ims_, gt = None, mode = "bac"):
+    ''''
+    Stabilizes a batch of images using Optical flow (block matching) 
+    using block matching. Returns stabilized images with stabilized 
+    gt and masks of valid entries
+    inputs:
+    ims_: (ndarray) Batch of images
+    gt: (ndarray) Ground truth 
+    mode: (str) bac or forward
+    outputs:
+    stabilized images
+    valid pixels masks
+    stabilized gt
+    ''' 
     #fix first image
     #for each image, match with previous one
     
-    stabilized_images= np.zeros(ims.shape)
-    n_im = ims.shape[0]
+    #Act on the gt as well!
+    #Use numpy concat?
+    
+    stabilized_images= np.zeros(ims_.shape).astype('uint8')
+    masks = np.zeros(ims_.shape[:3], dtype=bool)
+    
+    
+    n_im = ims_.shape[0]
     
     if(mode == "bac"):
-        ind = ims.shape[0]
+        ind = ims_.shape[0]
         sign = 1
     else:
         ind = 1
         sign = -1
         
-    stabilized_images[n_im-ind] = ims[n_im-ind]
-    current_image = ims[n_im-ind]
+    stabilized_images[n_im-ind] = ims_[n_im-ind]
+    current_image = ims_[n_im-ind]
+    
+    true_mask = np.full((ims_.shape[1:3]), True)
+    masks[n_im-ind] = true_mask
 
-    for i in range(1, ims.shape[0]):
+    if type(None) != type(gt):
         
-        of = optical_flow.block_matching(current_image, ims[n_im-ind + sign*i])
+        stabilized_gt = np.zeros(gt.shape, dtype = bool)
+        stabilized_gt[n_im-ind] = gt[n_im-ind]
+        #current_gt = gt[n_im-ind]
+        bmsk = gt[n_im-ind][0]
+        fgmsk = gt[n_im-ind][1]
+
+    for i in range(1, ims_.shape[0]):
+        
+        of = optical_flow.block_matching(current_image, ims_[n_im-ind + sign*i])
         u,v = of[:,:,0] , of[:,:,1]
         
         tform = SimilarityTransform(translation=(-u.mean() , -v.mean() ))
-        current_image = (255*warp(ims[n_im-ind + sign*i], tform.inverse)).astype('uint8')
-        stabilized_images[n_im-ind + sign*i] = current_image
+        current_image = (255*warp(ims_[n_im-ind + sign*i], tform.inverse)).astype('uint8')
+        
+        current_mask = warp(true_mask, tform.inverse).astype('bool')
 
-    return stabilized_images
+
+        
+        if type(None) != type(gt):
+            
+            bmsk = warp(gt[n_im-ind + sign*i][0], tform.inverse).astype('bool')
+            fgmsk = warp(gt[n_im-ind + sign*i][1], tform.inverse).astype('bool')
+            
+            #stabilized_gt[n_im-ind + sign*i] = warp(current_gt, tform.inverse).astype('bool')
+            stabilized_gt[n_im-ind + sign*i][0] = bmsk
+            stabilized_gt[n_im-ind + sign*i][1] = fgmsk
+        
+        stabilized_images[n_im-ind + sign*i] = current_image
+        masks[n_im-ind + sign*i] = current_mask
+        #current_gt = stabilized_gt[n_im-ind + sign*i]
+        
+    if type(None) != type(gt):    
+        
+        return stabilized_images, masks, stabilized_gt
+    
+    return stabilized_images, masks
