@@ -55,7 +55,7 @@ results:
   flow analysis](https://docs.google.com/presentation/d/1VQUlbHy3PaaCxYBiEG8HufPkYlS-PI2vXVjm6JIfX0Q/edit?usp=sharing).
 - Week 2: [Background estimation and Stauffer & Grimson's approach](https://docs.google.com/presentation/d/1aI1owlfyb7za4ij8lUc4j1mNEmD4aXV679oRF2lDiBk/edit#slide=id.p)
 - Week 3: [Foreground segmentation, filtering and shadow removal](https://docs.google.com/presentation/d/1bLqRug-OUk6e5cf1uCqNKUt3DlqElFyYameDbwt_n-A/edit?usp=sharing)
-- Week 4: Optical flow and video stabilization.
+- Week 4: [Optical flow and video stabilization](https://docs.google.com/presentation/d/1MSC-2cTM0PF6hQIKMk92vDQJizMgdOAmFFFq6BjObpU/edit#slide=id.p).
 - Week 5: Region tracking and Kalman filter.
 - Week 6: Pipeline assembly and performance evaluation.
 
@@ -130,6 +130,14 @@ Prerequisites:
 
 * Download the [KITTI dataset for Optical Flow  2012](http://kitti.is.tue.mpg.de/kitti/data_stereo_flow.zip) and unzip into the `datasets/` folder. You should have then two folders:
   `datasets/data_stereo_flow/{training, testing}`.
+* We have added new python dependencies for the project (imutils and
+  pandas). Update the environment by running `pip install -r requirements.txt`.
+
+To run the tasks of this week, `cd` to the root folder of the
+repository and execute: `python run.py week4 -t N`, where `N` can be:
+
+* 1 to execute tasks 1.1 and 1.2, related to optical flow estimation.
+* 2 to execute tasks 2.1 and 2.2, related to video compensation.
 
 
 ## Authors
