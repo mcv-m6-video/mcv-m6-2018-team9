@@ -154,9 +154,13 @@ def block_matching_sequence(seq, block_size=16, max_motion=16):
     return result
 
 
-def lucas_kanade(im1, im2, valid_mask, wsize, track_specs={}):
+def lucas_kanade(im1, im2, wsize, track_specs={}):
 
-    track_points = np.swapaxes(np.array(np.where(valid_mask != 0)), 0, 1)
+    track_points = np.mgrid[0:im1.shape[0],
+                   0:im1.shape[1]].swapaxes(0, 2).swapaxes(0, 1).reshape(
+        (im1.shape[0] * im1.shape[1], 2))
+
+    track_points = np.flip(track_points, axis=1)
 
     track_points = track_points.astype(np.float32)
 
@@ -167,6 +171,9 @@ def lucas_kanade(im1, im2, valid_mask, wsize, track_specs={}):
                                                    cv2.TERM_CRITERIA_COUNT,
                                                    10, 0.03))
 
+    track_points = np.flip(track_points, axis=1)
+    out_points = np.flip(out_points, axis=1)
+
     track_points = track_points.astype(int)
     out_points = out_points.astype(int)
 
@@ -175,27 +182,31 @@ def lucas_kanade(im1, im2, valid_mask, wsize, track_specs={}):
     shap = tuple(shap)
     flow = np.zeros(shap)
     for a, b in zip(track_points, out_points):
-        flow[a[0], a[1], 0:2] = b - a
+        bf = np.flip(b, axis=0)
+        af = np.flip(a, axis=0)
+        flow[a[0], a[1], 0:2] = bf - af
         flow[a[0], a[1], 2] = 1
 
     return flow
 
 
-def lk_sequence(seq, valid_mask, wsize, track_specs={}):
+def lk_sequence(seq, wsize, track_specs={}):
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
-        result[i] = lucas_kanade(seq[i], seq[i+1], valid_mask, wsize,
-                                 track_specs)
+        result[i] = lucas_kanade(seq[i], seq[i+1], wsize, track_specs)
 
     return result
 
 
-def lucas_kanade_pyr(im1, im2, valid_mask,  wsize, levels, track_specs={}):
+def lucas_kanade_pyr(im1, im2, wsize, levels, track_specs={}):
+    track_points = np.mgrid[0:im1.shape[0],
+                   0:im1.shape[1]].swapaxes(0, 2).swapaxes(0, 1).reshape(
+        (im1.shape[0] * im1.shape[1], 2))
 
-    track_points = np.swapaxes(np.array(np.where(valid_mask != 0)), 0, 1)
+    track_points = np.flip(track_points, axis=1)
 
     track_points = track_points.astype(np.float32)
 
@@ -206,27 +217,33 @@ def lucas_kanade_pyr(im1, im2, valid_mask,  wsize, levels, track_specs={}):
                                                   (cv2.TERM_CRITERIA_EPS |
                                                    cv2.TERM_CRITERIA_COUNT,
                                                    10, 0.03))
+
+    track_points = np.flip(track_points, axis=1)
+    out_points = np.flip(out_points, axis=1)
+
     track_points = track_points.astype(int)
     out_points = out_points.astype(int)
+
     shap = list(im1.shape)
     shap = shap + [3]
     shap = tuple(shap)
     flow = np.zeros(shap)
     for a, b in zip(track_points, out_points):
-        flow[a[0], a[1], 0:2] = b - a
-        flow[a[0], a[1], 2] = 1
+        bf = np.flip(b, axis=0)
+        af = np.flip(a, axis=0)
+        flow[a[0], a[1], 0:2] = bf - af
 
     return flow
 
 
-def lk_pyr_sequence(seq, valid_mask, wsize, pyr_levels, track_specs={}):
+def lk_pyr_sequence(seq,  wsize, pyr_levels, track_specs={}):
 
     n, h, w, _ = seq.shape
     seq = seq[:, :, :, 0]
     result = np.empty((n, h, w, 3), dtype='int16')
     for i in range(seq.shape[0] - 1):
-        result[i] = lucas_kanade_pyr(seq[i], seq[i+1], valid_mask, wsize,
-                                     pyr_levels, track_specs)
+        result[i] = lucas_kanade_pyr(seq[i], seq[i+1], wsize, pyr_levels,
+                                     track_specs)
 
     return result
 
