@@ -10,6 +10,9 @@ import cv2
 from data import cdnet
 from evaluation import metrics, animations
 from video import bg_subtraction, morphology, video_stabilization
+import matplotlib.pyplot as plt
+import time
+
 
 compareOutput = 0
 maxWidth = 320
@@ -17,7 +20,8 @@ out_path = '.'
 
 
 def run(dataset):
-    # Read dataset
+
+    # Model & Morphologyparameters
     if dataset == 'traffic':
         bsize = 400
         alpha_values = np.concatenate([np.linspace(0, 10, 30),
@@ -32,29 +36,29 @@ def run(dataset):
             se_open = np.logical_or(se_open,
                                     np.eye(l, dtype=np.uint8, k=r - 1))
         se_open = np.transpose(se_open.astype(np.uint8))
-        # Model parameters
 
     rho = dict(highway=0.20, fall=0.10, traffic=0.15)
 
+    # Read dataset
     train, gt_t = cdnet.read_sequence('week4', dataset, 'train',
                                 colorspace='gray',annotated=True)
     test, gt = cdnet.read_sequence('week4', dataset, 'test',
                                    colorspace='gray', annotated=True)
 
+    # Stabilize sequences
     train_stab, train_mask = video_stabilization.ngiaho_stabilization(train,
                                     gt_t, out_path, compareOutput, maxWidth)
     test_stab, test_mask = video_stabilization.ngiaho_stabilization(test,gt,
-                                out_path, compareOutput, maxWidth)
-    animations.video_recorder(test_stab, '', f"{dataset}_stabilized")
-    animations.video_recorder(test_mask[0], '',
-                              f"{dataset}_mask_stabilized")
+                                    out_path, compareOutput, maxWidth)
 
+    # Add axis
     test_stab = test_stab[...,np.newaxis]
     train_stab = train_stab[...,np.newaxis]
 
     # Adaptive model prediction
     model = bg_subtraction.create_model(train)
-    model_stab = bg_subtraction.create_model(train_stab)
+    model_stab = bg_subtraction.create_model_mask(train_stab,
+                                                  train_mask[1,:])
 
     # Compute AUC for Precision-Recall curves
     summaries_pred = []
@@ -64,9 +68,10 @@ def run(dataset):
 
     for alpha in alpha_values:
         print(f"{alpha:0.4f}, ", end='', flush=True)
-        pred = bg_subtraction.predict(test, model, alpha, rho=rho[dataset])
-        pred_stab = bg_subtraction.predict(test_stab, model_stab, alpha,
-                                      rho=rho[dataset])
+        #rho =rho[dataset]
+        pred = bg_subtraction.predict(test, model, alpha, rho =rho[dataset])
+        pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1,:],
+                                model_stab, alpha, rho =rho[dataset])
         filled8 = morphology.imfill(pred, neighb=8)
         filled8_stab = morphology.imfill(pred_stab, neighb=8)
         clean = morphology.filter_small(filled8, bsize, neighb=4)
@@ -92,11 +97,11 @@ def run(dataset):
                                         st_elem)
 
         summary_pred = metrics.eval_from_mask(pred, gt[:,0], gt[:,1])
-        summary_stab = metrics.eval_from_mask(pred_stab, test_mask[0,:],
-                                              test_mask[1,:])
+        summary_stab = metrics.eval_from_mask(pred_stab,
+                                              test_mask[0,:], test_mask[1,:])
         summary_morph = metrics.eval_from_mask(morph, gt[:,0], gt[:,1])
-        summary_morph_stab = metrics.eval_from_mask(morph_stab, test_mask[0,:],
-                                                    test_mask[1,:])
+        summary_morph_stab = metrics.eval_from_mask(morph_stab,
+                                              test_mask[0,:],test_mask[1,:])
 
         summaries_pred.append(summary_pred)
         summaries_stab.append(summary_stab)
@@ -144,13 +149,15 @@ def run(dataset):
                  dict(title=f"morphology: (AUC={auc_morph:0.4f})",
                       data=summaries_morph),
                  ]
-
+    plt.figure()
     metrics.plot_precision_recall_curves(plot_data, same_plot=True)
 
     pred = bg_subtraction.predict(test, model, alpha2,
                                   rho=rho[dataset])
-    pred_stab = bg_subtraction.predict(test_stab, model, alpha2,
-                                       rho=rho[dataset])
+    pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1],
+                                        model_stab, alpha2, rho=rho[dataset])
+
+
     filled8 = morphology.imfill(pred, neighb=8)
     filled8_stab = morphology.imfill(pred_stab, neighb=8)
     clean = morphology.filter_small(filled8, bsize, neighb=4)
@@ -177,16 +184,18 @@ def run(dataset):
 
     # Save individual gifs and an extra gif which compare them
     animations.video_recorder(pred, '', f"{dataset}_orig")
+    animations.video_recorder(filled8, '', f"{dataset}_filled8")
+    animations.video_recorder(clean, '', f"{dataset}_clean")
     animations.video_recorder(pred_stab, '', f"{dataset}_orig_stab")
     animations.video_recorder(morph_stab, '', f"{dataset}_morph_stab")
     animations.video_recorder(morph, '', f"{dataset}_morph")
+    animations.video_recorder(test_mask[1,:], '', f"{dataset}_valid")
 
-    animations.save_comparison_gif(f"{dataset}_summary.gif", pred, pred_stab,
-                                   morph_stab)
+    #animations.save_comparison_gif(f"{dataset}_summary.gif", pred, pred_stab,
+    #                               morph_stab)
 
 
 
-    animations.video_recorder(test_stab, '', f"{dataset}_stabilized")
-    #animations.video_recorder(mask, '', f"{dataset}_stabilized_mask")
+    # animations.video_recorder(test_stab, '', f"{dataset}_stabilized")
 
     print("Done")

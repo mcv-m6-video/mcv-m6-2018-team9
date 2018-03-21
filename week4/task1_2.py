@@ -16,29 +16,34 @@ def run():
     sequences_id = [SEQ_ID_1, SEQ_ID_2]
     sequences_names = [SEQ_NAME_1, SEQ_NAME_2]
 
+    params = [dict(lk_wsz=(80, 80), pyr_wsz=(80, 80), pyr_lev=5, fnb_wsz=80),
+              dict(lk_wsz=(120, 120), pyr_wsz=(120, 120), pyr_lev=5,
+                   fnb_wsz=120)]
+
     results = []
+
+    count = 0
 
     for seq_id, seq_name in zip(sequences_id, sequences_names):
 
         seq, gt = kitti.read_sequence(seq_id, annotated=True)
 
-        flow_lk = optical_flow.lk_sequence(seq, valid_mask=gt[:, :, 2],
-                                           wsize=(15, 15))
+        flow_lk = optical_flow.lk_sequence(seq, wsize=params[count]['lk_wsz'])
 
-        flow_lk_pyr = optical_flow.lk_pyr_sequence(seq, valid_mask=gt[:, :, 2],
-                                                   wsize=(15, 15), pyr_levels=3)
+        flow_lk_pyr = optical_flow.lk_pyr_sequence(seq, wsize=params[count]
+                                                   ['pyr_wsz'],
+                                                   pyr_levels=params[count]
+                                                   ['pyr_lev'])
 
         flow_fnb = optical_flow.farneback_sequence(seq, levels=3, pyr_sc=0.5,
-                                                   wsize=15, n_iter=10,
-                                                   poly_n=7, p_sigma=1.5,
+                                                   wsize=params[count]
+                                                   ['fnb_wsz'], n_iter=10,
+                                                   poly_n=10, p_sigma=1.5,
                                                    gauss=True)
 
         flow_lk = flow_lk[0]
         flow_lk_pyr = flow_lk_pyr[0]
-        flow_fnb = np.concatenate((flow_fnb[0], np.ones((flow_fnb.shape[1],
-                                                         flow_fnb.shape[2],
-                                                         1))),
-                                  axis=2)
+        flow_fnb = flow_fnb[0]
 
         results.append(dict(title=seq_name,
                             lk=dict(flow=flow_lk,
@@ -50,6 +55,7 @@ def run():
                             fnb=dict(flow=flow_fnb,
                                      metrics=metrics.optflow_metrics(flow_fnb,
                                                                      gt))))
+        count += 1
 
     for res in results:
         print('Sequence ' + res['title'] + ':')
