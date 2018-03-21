@@ -1,24 +1,8 @@
-import os.path
-import matplotlib as mpl
-mpl.use('TkAgg')
-import matplotlib.pyplot as plt
 import numpy as np
-from video import optical_flow
+from video import optical_flow, bg_subtraction, morphology, shadow_detection
 from evaluation import metrics
-from matplotlib.ticker import FuncFormatter
 import cv2
-import imageio
-import numpy.ma as ma
-
-from skimage.transform import warp
-from skimage.transform import SimilarityTransform
-from skimage.transform import warp
-from skimage.io import imsave, imread, imshow
-from skimage.color import rgb2gray
-from skimage.viewer import ImageViewer
 from data import cdnet
-from evaluation import multigif
-from video import bg_subtraction, morphology, shadow_detection
 
 def run():
     
