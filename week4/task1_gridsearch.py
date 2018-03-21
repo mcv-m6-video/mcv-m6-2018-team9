@@ -18,15 +18,8 @@ def run():
 
     """
     # Hyperparameters
-    block_size = [4, 8, 16, 32, 48, 64]
-    max_motion = [4, 8, 16, 32, 48, 64]
-    compensation = 'forward'
-
-    # Set indices depending on backward or forward compensation
-    if compensation == 'forward':
-        a, b = (0, 1)
-    else:
-        a, b = (1, 0)
+    block_size = [4, 8, 16, 24, 32, 40, 48, 54, 64]
+    max_motion = [4, 8, 16, 24, 32, 40, 48, 54, 64]
 
     # Kitti dataset, sequences 45 and 157
     seq45, gt45 = kitti.read_sequence(45, annotated=True)
@@ -37,13 +30,13 @@ def run():
     for i, bsize in enumerate(block_size):
         for j, maxm in enumerate(max_motion):
             # Sequence 45
-            pred45 = optical_flow.block_matching(seq45[a], seq45[b],
+            pred45 = optical_flow.block_matching(seq45[0], seq45[1],
                                                  block_size=bsize,
                                                  max_motion=maxm)
             __, pepn45, __, __ = metrics.optflow_metrics(pred45, gt45)
 
             # Sequence 157
-            pred157 = optical_flow.block_matching(seq157[a], seq157[b],
+            pred157 = optical_flow.block_matching(seq157[0], seq157[1],
                                                  block_size=bsize,
                                                  max_motion=maxm)
             __, pepn157, __, __ = metrics.optflow_metrics(pred157, gt157)
@@ -53,16 +46,15 @@ def run():
             print(f'bsize {block_size[i]}, maxm {max_motion[j]}: '
                   f'{pepn[i,j]:0.02f}')
 
-
     # Find best score
-    pcpn = 100 - pepn
+    pcpn = (100 - pepn) / 100  # 1 - PEPN
     i, j = np.unravel_index(pcpn.argmax(), pcpn.shape)
-    print(f'Best parameters for {compensation} compensation:')
+    print(f'Best parameters for forward compensation:')
     print(f'- Block size: {block_size[i]}')
     print(f'- Max motion: {max_motion[j]}')
-    print(f'With a PEPN = {pepn[i,j]:0.02f} (PCPN = {pcpn[i,j]:0.02f})')
+    print(f'With a PEPN = {pepn[i,j]:0.02f}')
 
     # Plot surface of results
-    metrics.plot_gridsearch_3d(block_size, max_motion, pcpn,
-                               xlabel='Block size', ylabel='Max motion',
-                               zlabel='PCPN', title='Grid search')
+    metrics.plot_gridsearch_3d(block_size, max_motion, pepn,
+                               xlabel='Max motion', ylabel='Block size',
+                               zlabel='PEPN', title='Grid search')
