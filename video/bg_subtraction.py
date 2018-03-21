@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import numpy.ma as ma
 
 
 def create_model(images):
@@ -17,20 +18,25 @@ def create_model(images):
     std = np.std(images, axis=0, dtype='float32')
     return (mean, std)
 
+
 def create_model_mask(images, masks):
     '''
     Creates the model taking into account only pixels defined in 
     masks array
     '''
-    #We create the masks for masking with numpy
-    channeled_masks = np.repeat(masks, 3)
-    
-    #True values in the mask are masked, so we invert the GT
-    masked = ma.masked_array(images.flatten(), mask=np.invert(channeled_masks.astype(bool))).reshape(images.shape)
+    # We create the masks for masking with numpy
+    channeled_masks = masks
+    if images.shape[3] == 3:
+        channeled_masks = np.repeat(masks, images.shape[3])
+    # True values in the mask are masked, so we invert the GT
+    masked = ma.masked_array(images.flatten(), mask=np.invert(
+        channeled_masks.astype(bool))).reshape(images.shape)
     mean = np.mean(masked, axis=0, dtype='float32')
     std = np.std(masked, axis=0, dtype='float32')
 
-    return (mean.compressed().reshape(images.shape[1:]), std.compressed().reshape(images.shape[1:]))
+    return (mean.compressed().reshape(images.shape[1:]),
+            std.compressed().reshape(images.shape[1:]))
+
 
 def predict(images, model, alpha, rho=0, return_model=False):
     """Apply background subtraction to a batch of images
@@ -63,17 +69,17 @@ def predict(images, model, alpha, rho=0, return_model=False):
     for i, im in enumerate(images):
         fgmask = np.absolute(im - mean) >= alpha * (std + 2)
         estimation[i] = np.prod(fgmask, axis=-1, dtype='bool')
-
         if rho != 0:
             mean[~fgmask] = rho * im[~fgmask] + (1 - rho) * mean[~fgmask]
-            std[~fgmask] = np.sqrt(rho * (im[~fgmask] - mean[~fgmask])**2 +
-                                   (1 - rho) * std[~fgmask]**2)
+            std[~fgmask] = np.sqrt(rho * (im[~fgmask] - mean[~fgmask]) ** 2 +
+                                   (1 - rho) * std[~fgmask] ** 2)
 
     if return_model:
         return (estimation, (mean, std))
     else:
         return estimation
-    
+
+
 def predict_masked(images, masks, model, alpha, rho=0, return_model=False):
     """Apply background subtraction to a batch of images
         Taking into account valid pixels defined in masks array
@@ -97,30 +103,43 @@ def predict_masked(images, masks, model, alpha, rho=0, return_model=False):
       parameters (mean, std) after analyze the images. Useful to analyze the
       model adaptation when rho != 0.
 
-    """    
+    """
     n, h, w, _ = images.shape
     mean = model[0].copy()
     std = model[1].copy()
     estimation = np.zeros((n, h, w), dtype='bool')
 
-    channeled_masks = np.repeat(masks, 3)
+    channeled_masks = masks
+    gray_est = False
+    if images.shape[3] == 3:
+        channeled_masks = np.repeat(masks, images.shape[3])
+    else:
+        mean = mean[..., 0]
+        std = std[..., 0]
+        images = images[..., 0]
+        gray_est = True
+
 
     for i, im in enumerate(images):
         fgmask = np.absolute(im - mean) >= alpha * (std + 2)
-        estimation[i] = np.logical_and(np.prod(fgmask, axis=-1, dtype='bool'), channeled_masks[i])
-        inverted =  np.invert(channeled_masks[i])
+        fgmask_est = fgmask
+        if gray_est:
+            fgmask_est = fgmask[...,np.newaxis]
+        estimation[i] = np.logical_and( np.prod(fgmask_est, axis=-1,
+                                    dtype='bool'),channeled_masks[i])
+        inverted = np.invert(channeled_masks[i])
         fgmask = np.logical_or(fgmask, inverted)
+
         if rho != 0:
             mean[~fgmask] = rho * im[~fgmask] + (1 - rho) * mean[~fgmask]
-            std[~fgmask] = np.sqrt(rho * (im[~fgmask] - mean[~fgmask])**2 +
-                                   (1 - rho) * std[~fgmask]**2)
-    
+            std[~fgmask] = np.sqrt(rho * (im[~fgmask] - mean[~fgmask]) ** 2 +
+                                   (1 - rho) * std[~fgmask] ** 2)
+
     if return_model:
         return (estimation, (mean, std))
     else:
         return estimation
-    
-    
+
 
 def create_model_opencv(threshold):
     return cv.bgsegm.createBackgroundSubtractorLSBP(LSBPthreshold=threshold)
