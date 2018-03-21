@@ -57,7 +57,8 @@ def main():
             week4.task1_qualitative.run()
         if args.task == 2:
             week4.task2_ngiaho.run('traffic')
-
+        if args.task == 3:
+            week4.task_1.run()
 
 if __name__ == '__main__':
     main()
