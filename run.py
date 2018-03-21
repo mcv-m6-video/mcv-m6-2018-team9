@@ -55,8 +55,9 @@ def main():
         if args.task == 1:
             week4.task1_gridsearch.run()
             week4.task1_qualitative.run()
+            week4.task1_2.run()
         if args.task == 2:
-            week4.task2_1
+            week4.task2_1.run()
             week4.task2_ngiaho.run('traffic')
 
 
