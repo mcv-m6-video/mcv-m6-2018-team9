@@ -9,3 +9,4 @@ imageio==2.2.0
 scikit_image==0.13.1
 imutils==0.4.6
 pandas==0.22.0
+scipy==1.0.0
