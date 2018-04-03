@@ -17,7 +17,9 @@ class Tracker:
         blob_centroids = centroids(bboxes)
         kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
         if kalman_centroids:
-            kalman_centroids = np.vstack(kalman_centroids)
+            kalman_centroids = np.array(kalman_centroids)
+            kalman_centroids = np.squeeze(kalman_centroids, axis=2)
+            blob_centroids = np.array(blob_centroids)
             dist = euclidean_distance(kalman_centroids, blob_centroids)
             match_i, match_j = opt.linear_sum_assignment(dist)
         else:
@@ -31,9 +33,8 @@ class Tracker:
         # Manage matched kalman filters
         for i, j in zip(match_i, match_j):
             if dist[i, j] <= self.max_distance:
-                unmatched_kalman.remove(i)
-                unmatched_blobs.remove(j)
-
+                unmatched_kalman[i] = None
+                unmatched_blobs[j] = None
                 # FIXME: invoke predict() after correct()???
                 self.filters[i]['kalman'].correct(blob_centroids[j])
                 estimation = self.filters[i]['kalman'].predict()
@@ -46,6 +47,8 @@ class Tracker:
                 # Reset disappeared counter
                 self.filters[i]['disappeared'] = 0
 
+        unmatched_kalman = list(filter(lambda a: a is not None, unmatched_kalman))
+        unmatched_blobs = list(filter(lambda a: a is not None, unmatched_blobs))
         # Manage unmatched kalman filters
         for i in reversed(unmatched_kalman):
             # Increase disappeared counter
