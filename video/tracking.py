@@ -16,13 +16,18 @@ class Tracker:
         # Centroid assignment through Hungarian algorithm
         blob_centroids = centroids(bboxes)
         kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
-        kalman_centroids = np.vstack(kalman_centroids)
-        dist = euclidean_distance(kalman_centroids, blob_centroids)
-        match_i, match_j = opt.linear_sum_assignment(dist)
+        if kalman_centroids:
+            kalman_centroids = np.vstack(kalman_centroids)
+            dist = euclidean_distance(kalman_centroids, blob_centroids)
+            print(dist)
+            match_i, match_j = opt.linear_sum_assignment(dist)
+        else:
+            match_i = []
+            match_j = []
 
         result_list = []
-        unmatched_kalman = range(len(self.filters))
-        unmatched_blobs = range(len(blob_centroids))
+        unmatched_kalman = list(range(len(self.filters)))
+        unmatched_blobs = list(range(len(blob_centroids)))
 
         # Manage matched kalman filters
         for i, j in zip(match_i, match_j):
@@ -31,10 +36,12 @@ class Tracker:
                 unmatched_blobs.remove(j)
 
                 # FIXME: invoke predict() after correct()???
-                estimation = self.filters[i]['kalman'].correct(blob_centroids[j])
-                result = dict(id=self.filters[i].id,
+                self.filters[i]['kalman'].correct(blob_centroids[j])
+                estimation = self.filters[i]['kalman'].predict()
+                self.filters[i]['last_prediction'] = estimation
+                result = dict(id=self.filters[i]['id'],
                               location=estimation[:2],
-                              motion=estimation[2:]))
+                              motion=estimation[2:])
                 result_list.append(result)
 
                 # Reset disappeared counter
@@ -46,11 +53,12 @@ class Tracker:
             self.filters[i]['disappeared'] += 1
 
             # Remove if exceeds threshold, otherwise predict
-            if self.filters[i]['disappeared'] < disappear_threshold:
+            if self.filters[i]['disappeared'] < self.disappear_thr:
                 estimation = self.filters[i]['kalman'].predict()
-                result = dict(id=self.filters[i].id,
+                self.filters[i]['last_prediction'] = estimation
+                result = dict(id=self.filters[i]['id'],
                               location=estimation[:2],
-                              motion=estimation[2:]))
+                              motion=estimation[2:])
                 result_list.append(result)
             else:
                 del self.filters[i]
@@ -62,14 +70,15 @@ class Tracker:
             self.filters.append(new_filter)
 
             # Add prediction to result list
-            estimation = new_filter['kalman'].correct(blob_centroids[j])
-            result = dict(id=new_filter.id,
+            new_filter['kalman'].correct(blob_centroids[i])
+            estimation = new_filter['kalman'].predict()
+            new_filter['last_prediction'] = estimation
+            result = dict(id=new_filter['id'],
                           location=estimation[:2],
-                          motion=estimation[2:]))
+                          motion=estimation[2:])
             result_list.append(result)
 
         return result_list
-
 
     def _create_kalman_filter(self):
         self.obj_counter += 1
@@ -91,7 +100,7 @@ class Tracker:
 
 def centroids(bboxes):
     result = []
-    for b in boxes:
+    for b in bboxes:
         result.append([(b[2] + b[0]) / 2, (b[3] + b[1]) / 2])
     return np.array(result, dtype='float32')
 
