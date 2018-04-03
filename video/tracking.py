@@ -19,7 +19,6 @@ class Tracker:
         if kalman_centroids:
             kalman_centroids = np.vstack(kalman_centroids)
             dist = euclidean_distance(kalman_centroids, blob_centroids)
-            print(dist)
             match_i, match_j = opt.linear_sum_assignment(dist)
         else:
             match_i = []
