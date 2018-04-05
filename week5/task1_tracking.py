@@ -96,6 +96,7 @@ def run(dataset):
 
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
                                     st_elem)
+
     morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN,
                                          st_elem)
 
@@ -167,8 +168,6 @@ def run(dataset):
             # Update tracker
             #ok, bbox = tracker.update(frame)
 
-            print(bboxes)
-
             res_bboxes = trk.estimate(bboxes)
 
             # Calculate Frames per second (FPS)
@@ -177,10 +176,11 @@ def run(dataset):
 
             # Draw bounding box
             for i, cbb in enumerate(res_bboxes):
-                print(cbb)
                 # Tracking success
-                p1 = (int(cbb['location'][0] - 30), int(cbb['location'][1] - 30))
-                p2 = (int(cbb['location'][0] + 30), int(cbb['location'][1] + 30))
+                p1 = (int(cbb['location'][0] - cbb['size'][0]),
+                      int(cbb['location'][1] - cbb['size'][1]))
+                p2 = (int(cbb['location'][0] + cbb['size'][0]),
+                      int(cbb['location'][1] + cbb['size'][1]))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
 
             # Display tracker type on frame
@@ -198,8 +198,8 @@ def run(dataset):
             k = cv2.waitKey(50) & 0xff
             if k == 27: break
 
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     tracker_out = np.array(tracker_out)
 
