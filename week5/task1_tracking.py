@@ -109,38 +109,20 @@ def run(dataset):
 
             # Start timer
             timer = cv2.getTickCount()
-
             blob = detector.detect(frame)
-
             bboxes = np.array([(bb.pt[0], bb.pt[1], bb.pt[0] + bb.size / 2,
                                 bb.pt[1] + bb.size / 2) for bb in blob])
 
-            # Update tracker
-            #ok, bbox = tracker.update(frame)
-
-            print(bboxes)
-
             res_bboxes = trk.estimate(bboxes)
-
-            # Calculate Frames per second (FPS)
-            # fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer);
-            fps = 12
 
             # Draw bounding box
             for i, cbb in enumerate(res_bboxes):
-                print(cbb)
                 # Tracking success
-                p1 = (int(cbb['location'][0] - 30), int(cbb['location'][1] - 30))
-                p2 = (int(cbb['location'][0] + 30), int(cbb['location'][1] + 30))
+                p1 = (int(cbb['location'][0] - cbb['size'][0]),
+                      int(cbb['location'][1] - cbb['size'][1]))
+                p2 = (int(cbb['location'][0] + cbb['size'][0]),
+                      int(cbb['location'][1] + cbb['size'][1]))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
-
-            # # Display tracker type on frame
-            # cv2.putText(out_im, tracker_type + " Tracker", (100, 20),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
-
-            # # Display FPS on frame
-            # cv2.putText(out_im, "FPS : " + str(int(fps)), (100, 50),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
 
             # Append result
             tracker_out.append(out_im)
@@ -149,8 +131,8 @@ def run(dataset):
             k = cv2.waitKey(50) & 0xff
             if k == 27: break
 
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     tracker_out = np.array(tracker_out)
 

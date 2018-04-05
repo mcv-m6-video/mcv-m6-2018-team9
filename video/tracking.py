@@ -16,7 +16,7 @@ class Tracker:
         # Centroid assignment through Hungarian algorithm
         blob_centroids = centroids(bboxes)
         kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
-        if kalman_centroids:
+        if kalman_centroids and blob_centroids.size != 0:
             kalman_centroids = np.array(kalman_centroids)
             kalman_centroids = np.squeeze(kalman_centroids, axis=2)
             blob_centroids = np.array(blob_centroids)
@@ -39,9 +39,12 @@ class Tracker:
                 self.filters[i]['kalman'].correct(blob_centroids[j])
                 estimation = self.filters[i]['kalman'].predict()
                 self.filters[i]['last_prediction'] = estimation
+                self.filters[i]['last_size'] = (bboxes[j][2] - bboxes[j][0],
+                                                bboxes[j][3] - bboxes[j][1])
                 result = dict(id=self.filters[i]['id'],
                               location=estimation[:2],
-                              motion=estimation[2:])
+                              motion=estimation[2:],
+                              size=self.filters[i]['last_size'])
                 result_list.append(result)
 
                 # Reset disappeared counter
@@ -60,7 +63,8 @@ class Tracker:
                 self.filters[i]['last_prediction'] = estimation
                 result = dict(id=self.filters[i]['id'],
                               location=estimation[:2],
-                              motion=estimation[2:])
+                              motion=estimation[2:],
+                              size=self.filters[i]['last_size'])
                 result_list.append(result)
             else:
                 del self.filters[i]
@@ -75,9 +79,12 @@ class Tracker:
             new_filter['kalman'].correct(blob_centroids[i])
             estimation = new_filter['kalman'].predict()
             new_filter['last_prediction'] = estimation
+            new_filter['last_size'] = (bboxes[i][2] - bboxes[i][0],
+                                       bboxes[i][3] - bboxes[i][1])
             result = dict(id=new_filter['id'],
                           location=estimation[:2],
-                          motion=estimation[2:])
+                          motion=estimation[2:],
+                          size=self.filters[i]['last_size'])
             result_list.append(result)
 
         return result_list
