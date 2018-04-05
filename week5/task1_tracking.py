@@ -1,10 +1,3 @@
-#script to perform video stabilization based on AdamSpannbauer implementation.
-#	INPUTS: IMAGE SEQUENCE
-#	OUTPUTS: STABELIZED VIDEO AVI, TRANSFORMATION DF CSV, SMOOTHED TRAJECTORY CSV
-
-#RESOURCE & ORIGINAL CPP AUTHOR OF THIS VIDEO STAB LOGIC: http://nghiaho.com/?p=2093
-#ORIGINAL CPP: http://nghiaho.com/uploads/code/videostab.cpp
-
 import numpy as np
 import cv2
 from data import cdnet
@@ -18,20 +11,25 @@ compareOutput = 0
 maxWidth = 320
 out_path = '.'
 
-(major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
-
 
 def run(dataset):
+    # Dataset-specific parameters
+    if dataset == 'highway':
+        rho = 0.20
+        alpha = 2.8
+        bsize = 50
+        se_close = (15, 15)
+        se_open = (4, 17)
+        shadow_t1 = 0.082
+        shadow_t2 = 0.017
 
-    # Model & Morphologyparameters
-    if dataset == 'traffic':
+    elif dataset == 'traffic':
+        rho = 0.15
+        alpha = 2.25
         bsize = 400
-        alpha_values = np.concatenate([np.linspace(0, 10, 30),
-                                       np.linspace(11, 40, 10)])
         se_close = (15, 15)
         k = 9
         l = 30
-        alpha2 = 1.38
 
         se_open = np.eye(l, dtype=np.uint8)
         for r in range(0, k):
@@ -41,19 +39,14 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r - 1))
         se_open = np.transpose(se_open.astype(np.uint8))
 
-    rho = dict(highway=0.20, fall=0.10, traffic=0.15)
-
-    #TRACKING TYPE: 'BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN'
-    tracker_type = 'KCF'
-    print('tracker type: ', str(tracker_type))
-
     # Read dataset
     train, gt_t = cdnet.read_sequence('week4', dataset, 'train',
-                                colorspace='gray',annotated=True)
-    test, gt = cdnet.read_sequence('week4', dataset, 'test',
-                                   colorspace='gray', annotated=True)
+                                      colorspace='gray',annotated=True)
+    test, gt = cdnet.read_sequence('week4', dataset, 'test', colorspace='gray',
+                                   annotated=True)
 
     # Stabilize sequences
+    # TODO: check from previous weeks if video stabilization needs color images
     train_stab, train_mask = video_stabilization.ngiaho_stabilization(train,
                                     gt_t, out_path, compareOutput, maxWidth)
     test_stab, test_mask = video_stabilization.ngiaho_stabilization(test,gt,
@@ -65,39 +58,31 @@ def run(dataset):
 
     # Adaptive model prediction
     model = bg_subtraction.create_model(train)
-    model_stab = bg_subtraction.create_model_mask(train_stab,
-                                                  train_mask[1,:])
+    model_stab = bg_subtraction.create_model_mask(train_stab, train_mask[1,:])
 
-
-    pred = bg_subtraction.predict(test, model, alpha2,
-                                  rho=rho[dataset])
+    pred = bg_subtraction.predict(test, model, alpha, rho=rho)
     pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1],
-                                        model_stab, alpha2, rho=rho[dataset])
+                                              model_stab, alpha, rho=rho)
 
-
+    # Imfill + filter small blobs
     filled8 = morphology.imfill(pred, neighb=8)
     filled8_stab = morphology.imfill(pred_stab, neighb=8)
     clean = morphology.filter_small(filled8, bsize, neighb=4)
     clean_stab = morphology.filter_small(filled8_stab, bsize, neighb=4)
 
-    # CLOSING
-    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                        se_close)
-    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
-                                    st_elem)
-    clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
-                                         st_elem)
+    # Closing
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
+    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE, st_elem)
+    clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE, st_elem)
 
-    # OPENING
+    # Opening
     if (dataset == 'traffic'):
         st_elem = se_open
     else:
         st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
 
-    morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
-                                    st_elem)
-    morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN,
-                                         st_elem)
+    morph = morphology.filter_morph(clean, cv2.MORPH_OPEN, st_elem)
+    morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN, st_elem)
 
     # TRACKING
     # Setup SimpleBlobDetector parameters.
@@ -107,47 +92,13 @@ def run(dataset):
     params.filterByArea = False
     #params.minArea = 10000
 
-
     detector = cv2.SimpleBlobDetector_create(params)
-
-    # if int(minor_ver) < 3:
-    #     tracker = cv2.Tracker_create(tracker_type)
-    # else:
-    #     if tracker_type == 'BOOSTING':
-    #         tracker = cv2.TrackerBoosting_create()
-    #     if tracker_type == 'MIL':
-    #         tracker = cv2.TrackerMIL_create()
-    #     if tracker_type == 'KCF':
-    #         tracker = cv2.TrackerKCF_create()
-    #     if tracker_type == 'TLD':
-    #         tracker = cv2.TrackerTLD_create()
-    #     if tracker_type == 'MEDIANFLOW':
-    #         tracker = cv2.TrackerMedianFlow_create()
-    #     if tracker_type == 'GOTURN':
-    #         tracker = cv2.TrackerGOTURN_create()
-
     morph = (morph*255).astype('uint8')
-    # blob_im = morph[0,:,:]
-    # initial_blob = detector.detect(blob_im)
-
-
-    # Show blobs
-    # im_disp = test_stab[0]
-    # for k in initial_blob:
-    #    p1 = (int(k.pt[0]-k.size/2), int(k.pt[1]-k.size/2))
-    #    p2 = (int(k.pt[0] + k.size/2), int(k.pt[1] + k.size/2))
-    #    cv2.rectangle(im_disp, p1, p2, (255, 0, 0), 2, 1)
-
-    #tracker_out = [im_disp]
-    # bbox = (initial_blob[0].pt[0],initial_blob[0].pt[1], initial_blob[0].pt[0] + k.size/2, initial_blob[0].pt[1] + k.size/2)
 
     # Initialize tracker with first frame and bounding box
     trk = tracking.Tracker(3, max_distance=200)
-    #ok = tracker.init(blob_im, bbox)
-
     colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
-
     tracker_out = []
 
     for idx in range(1, morph.shape[0]):
@@ -183,13 +134,13 @@ def run(dataset):
                 p2 = (int(cbb['location'][0] + 30), int(cbb['location'][1] + 30))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
 
-            # Display tracker type on frame
-            cv2.putText(out_im, tracker_type + " Tracker", (100, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
+            # # Display tracker type on frame
+            # cv2.putText(out_im, tracker_type + " Tracker", (100, 20),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
 
-            # Display FPS on frame
-            cv2.putText(out_im, "FPS : " + str(int(fps)), (100, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
+            # # Display FPS on frame
+            # cv2.putText(out_im, "FPS : " + str(int(fps)), (100, 50),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
 
             # Append result
             tracker_out.append(out_im)
@@ -205,5 +156,6 @@ def run(dataset):
 
     # Save individual gifs and an extra gif which compare them
     animations.video_recorder(pred, '', f"{dataset}_orig")
+    animations.video_recorder(morph, '', f"{dataset}_morph")
     animations.video_recorder(test_mask[1,:], '', f"{dataset}_valid")
     animations.video_recorder(tracker_out, '', f"{dataset}_track")
