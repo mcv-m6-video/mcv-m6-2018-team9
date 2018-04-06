@@ -1,15 +1,8 @@
-#script to perform video stabilization based on AdamSpannbauer implementation.
-#	INPUTS: IMAGE SEQUENCE
-#	OUTPUTS: STABELIZED VIDEO AVI, TRANSFORMATION DF CSV, SMOOTHED TRAJECTORY CSV
-
-#RESOURCE & ORIGINAL CPP AUTHOR OF THIS VIDEO STAB LOGIC: http://nghiaho.com/?p=2093
-#ORIGINAL CPP: http://nghiaho.com/uploads/code/videostab.cpp
-
 import numpy as np
 import cv2
 from data import cdnet
 from evaluation import metrics, animations
-from video import bg_subtraction, morphology, video_stabilization
+from video import bg_subtraction, morphology, video_stabilization, tracking
 import matplotlib.pyplot as plt
 import time
 
@@ -41,7 +34,15 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r - 1))
         se_open = np.transpose(se_open.astype(np.uint8))
 
-    rho = dict(highway=0.20, fall=0.10, traffic=0.15)
+    if dataset == 'highway':
+        rho = 0.20
+        alpha2 = 2.8
+        bsize = 50
+        se_close = (15, 15)
+        se_open = (4, 17)
+        shadow_t1 = 0.082
+        shadow_t2 = 0.017
+
 
     #TRACKING TYPE: 'BOOSTING', 'MIL', 'KCF', 'TLD', 'MEDIANFLOW', 'GOTURN'
     tracker_type = 'KCF'
@@ -70,9 +71,9 @@ def run(dataset):
 
 
     pred = bg_subtraction.predict(test, model, alpha2,
-                                  rho=rho[dataset])
+                                  rho=rho)
     pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1],
-                                        model_stab, alpha2, rho=rho[dataset])
+                                        model_stab, alpha2, rho=rho)
 
 
     filled8 = morphology.imfill(pred, neighb=8)
@@ -100,17 +101,9 @@ def run(dataset):
                                          st_elem)
 
     # TRACKING
-    # Setup SimpleBlobDetector parameters.
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByColor = True
-    params.blobColor = 255
-    params.filterByArea = False
-    #params.minArea = 10000
-
-
-    detector = cv2.SimpleBlobDetector_create(params)
 
     if int(minor_ver) < 3:
+        print('yuhu')
         tracker = cv2.Tracker_create(tracker_type)
     else:
         if tracker_type == 'BOOSTING':
@@ -127,26 +120,25 @@ def run(dataset):
             tracker = cv2.TrackerGOTURN_create()
 
     morph = (morph*255).astype('uint8')
-    blob_im = morph[0,:,:]
-    initial_blob = detector.detect(blob_im)
 
+    # Setup SimpleBlobDetector parameters.
+    params = cv2.SimpleBlobDetector_Params()
+    params.filterByColor = True
+    params.blobColor = 255
+    params.filterByArea = False
+    # params.minArea = 10000
 
-    # Show blobs
-    im_disp = test_stab[0]
-    for k in initial_blob:
-        p1 = (int(k.pt[0]-k.size/2), int(k.pt[1]-k.size/2))
-        p2 = (int(k.pt[0] + k.size/2), int(k.pt[1] + k.size/2))
-        cv2.rectangle(im_disp, p1, p2, (255, 0, 0), 2, 1)
+    im_disp, bbox = tracking.detect_blobs(morph[0,:,:],test_stab[0],params)
 
     tracker_out = [im_disp]
-    bbox = (initial_blob[0].pt[0],initial_blob[0].pt[1], k.size/2, k.size/2)
 
     # Initialize tracker with first frame and bounding box
-    ok = tracker.init(blob_im, bbox)
+    ok = tracker.init(test[0], bbox)
 
     for idx in range(1, morph.shape[0]):
         # Read a new frame
-        frame = morph[idx]
+        #frame = morph[idx]
+        frame = test[idx]
         out_im = test[idx]
 
         # Start timer
@@ -154,6 +146,7 @@ def run(dataset):
 
         # Update tracker
         ok, bbox = tracker.update(frame)
+        #####dcsevrrzdgxgfnhmj,kl.kjhmgnfdgefsadws
 
         # Calculate Frames per second (FPS)
         # fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer);
