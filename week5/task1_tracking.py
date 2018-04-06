@@ -101,6 +101,13 @@ def run(dataset):
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
     tracker_out = []
 
+    #Speed (without rectification)
+    last_position = {}
+    #Aproximated values
+    meter_pix = 9./123.55 
+    fps = 12
+    
+    
     for idx in range(1, morph.shape[0]):
         try:
             # Read a new frame
@@ -123,7 +130,21 @@ def run(dataset):
                 p2 = (int(cbb['location'][0] + cbb['size'][0]),
                       int(cbb['location'][1] + cbb['size'][1]))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
+                                # speed estimator
+                try:
+                    
+                    dist = np.linalg.norm(last_position[str(cbb['id'])] - cbb['location'])
+                    print("for id: " , str(cbb['id']) ,": ", dist)
+                    last_position[str(cbb['id'])] = cbb['location']
+                    print (" v: ",  dist*meter_pix*fps*3.6)
 
+                    cv2.putText(out_im, str(dist*meter_pix*fps*3.6), p2, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
+
+                except KeyError:
+                    
+                    #create dict for id and add last position
+                    last_position[str(cbb['id'])] = cbb['location']
+                    
             # Append result
             tracker_out.append(out_im)
 
