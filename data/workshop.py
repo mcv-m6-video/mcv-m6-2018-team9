@@ -70,7 +70,7 @@ def iter_video(path, step=1, scale=1):
             break
 
 
-def write_sequence(src, dst, step=1, scale=1):
+def write_sequence(src, dst, step=1, scale=1, first_frame=0, last_frame=None):
     """Extract frames from a video file and write them as images in disk
 
     Args:
@@ -81,14 +81,18 @@ def write_sequence(src, dst, step=1, scale=1):
       step: (int) select the frames to iterate over. When step > 1, then only
         frames multiple of 'step' are considered.
       scale: (float) scaling factor to apply.
+      first_frame: (int) initial frame that will be stored
+      last_frame: (int) frame at which it will stop storing. If None, it will go
+      until the end.
 
     """
     os.makedirs(dst, exist_ok=True)
     i = 0
     for ts, frame in iter_video(src, step=step, scale=scale):
-        impath = os.path.join(dst, f"frame{i:05d}_ts{ts*1000:06.0f}.png")
-        cv2.imwrite(impath, frame)
-        print(impath)
+        if i >= first_frame and (last_frame is None or i <= last_frame):
+            impath = os.path.join(dst, f"frame{i:05d}_ts{ts*1000:06.0f}.png")
+            cv2.imwrite(impath, frame)
+            print(impath)
         i += step
 
 
