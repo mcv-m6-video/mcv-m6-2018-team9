@@ -5,7 +5,7 @@ import scipy.optimize as opt
 
 class Tracker:
 
-    def __init__(self, disappear_thr=3, min_matches=10, max_distance=100):
+    def __init__(self, disappear_thr=3, min_matches=5, max_distance=100):
         self.filters = []
         self.min_matches = min_matches
         self.disappear_thr = disappear_thr
@@ -118,6 +118,14 @@ class Tracker:
 ############################################
 # Auxiliary functions
 ############################################
+
+
+def find_bboxes(im):
+    """Given a binary image, find its blobs and return their bounding boxes"""
+    __, contours, __ = cv2.findContours(im, cv2.RETR_EXTERNAL,
+                                        cv2.CHAIN_APPROX_SIMPLE)
+    bboxes = [cv2.boundingRect(cont) for cont in contours]
+    return bboxes
 
 
 def centroids(bboxes):

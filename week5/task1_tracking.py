@@ -84,55 +84,31 @@ def run(dataset):
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN, st_elem)
     morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN, st_elem)
 
-    # TRACKING
-    # Setup SimpleBlobDetector parameters.
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByColor = True
-    params.blobColor = 255
-    params.filterByArea = False
-    #params.minArea = 10000
-
-    detector = cv2.SimpleBlobDetector_create(params)
-    morph = (morph*255).astype('uint8')
-
+    # Tracking
     # Initialize tracker with first frame and bounding box
-    trk = tracking.Tracker(3, max_distance=200)
+    morph = (morph * 255).astype('uint8')
+    tracker = tracking.Tracker()
     colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
     tracker_out = []
 
-    for idx in range(1, morph.shape[0]):
-        try:
-            # Read a new frame
-            frame = morph[idx]
-            out_im = test[idx]
+    for frame, out_im in zip(morph, test):
+        bboxes = tracking.find_bboxes(frame)
+        tracking_result = tracker.estimate(bboxes)
 
-            # Start timer
-            timer = cv2.getTickCount()
-            blob = detector.detect(frame)
-            bboxes = np.array([(bb.pt[0], bb.pt[1], bb.pt[0] + bb.size / 2,
-                                bb.pt[1] + bb.size / 2) for bb in blob])
+        print('-----------------')
+        print(bboxes)
 
-            res_bboxes = trk.estimate(bboxes)
+        for detection in tracking_result:
+            w = int(detection['width'])
+            h = int(detection['height'])
+            x = int(detection['location'][0] - w / 2)
+            y = int(detection['location'][1] - h / 2)
+            print(x, y, w, h)
+            cv2.rectangle(out_im, (x,y), (x+w, y+h), (0,255,0), 2)
 
-            # Draw bounding box
-            for i, cbb in enumerate(res_bboxes):
-                # Tracking success
-                p1 = (int(cbb['location'][0] - cbb['size'][0]),
-                      int(cbb['location'][1] - cbb['size'][1]))
-                p2 = (int(cbb['location'][0] + cbb['size'][0]),
-                      int(cbb['location'][1] + cbb['size'][1]))
-                cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
-
-            # Append result
-            tracker_out.append(out_im)
-
-            # Exit if ESC pressed
-            k = cv2.waitKey(50) & 0xff
-            if k == 27: break
-
-        except Exception as e:
-            print(e)
+        # Append result
+        tracker_out.append(out_im)
 
     tracker_out = np.array(tracker_out)
 
