@@ -5,8 +5,9 @@ import scipy.optimize as opt
 
 class Tracker:
 
-    def __init__(self, disappear_thr, max_distance=50):
+    def __init__(self, disappear_thr=3, min_matches=10, max_distance=100):
         self.filters = []
+        self.min_matches = min_matches
         self.disappear_thr = disappear_thr
         self.obj_counter = 0
         self.max_distance = max_distance  # max distance traversed by an object
@@ -18,8 +19,6 @@ class Tracker:
         kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
         if kalman_centroids and blob_centroids.size != 0:
             kalman_centroids = np.array(kalman_centroids)
-            kalman_centroids = np.squeeze(kalman_centroids, axis=2)
-            blob_centroids = np.array(blob_centroids)
             dist = euclidean_distance(kalman_centroids, blob_centroids)
             match_i, match_j = opt.linear_sum_assignment(dist)
         else:
@@ -35,37 +34,42 @@ class Tracker:
             if dist[i, j] <= self.max_distance:
                 unmatched_kalman[i] = None
                 unmatched_blobs[j] = None
-                # FIXME: invoke predict() after correct()???
+                # First correct, then predict
                 self.filters[i]['kalman'].correct(blob_centroids[j])
-                estimation = self.filters[i]['kalman'].predict()
+                estimation = self.filters[i]['kalman'].predict().squeeze()
                 self.filters[i]['last_prediction'] = estimation
-                self.filters[i]['last_size'] = (bboxes[j][2] - bboxes[j][0],
-                                                bboxes[j][3] - bboxes[j][1])
-                result = dict(id=self.filters[i]['id'],
-                              location=estimation[:2],
-                              motion=estimation[2:],
-                              size=self.filters[i]['last_size'])
-                result_list.append(result)
+                self.filters[i]['last_bbox'] = bboxes[j]
+                self.filters[i]['match_count'] += 1  # increase counter
+                self.filters[i]['disapp_count'] = 0  # reset counter
 
-                # Reset disappeared counter
-                self.filters[i]['disappeared'] = 0
+                if self.filters[i]['match_count'] >= self.min_matches:
+                    result = dict(id=self.filters[i]['id'],
+                                  location=estimation[:2],
+                                  motion=estimation[2:],
+                                  width=self.filters[i]['last_bbox'][2],
+                                  height=self.filters[i]['last_bbox'][3])
+                    result_list.append(result)
 
         unmatched_kalman = list(filter(lambda a: a is not None, unmatched_kalman))
         unmatched_blobs = list(filter(lambda a: a is not None, unmatched_blobs))
+
         # Manage unmatched kalman filters
         for i in reversed(unmatched_kalman):
             # Increase disappeared counter
-            self.filters[i]['disappeared'] += 1
+            self.filters[i]['disapp_count'] += 1
 
             # Remove if exceeds threshold, otherwise predict
-            if self.filters[i]['disappeared'] < self.disappear_thr:
-                estimation = self.filters[i]['kalman'].predict()
+            if self.filters[i]['disapp_count'] < self.disappear_thr:
+                estimation = self.filters[i]['kalman'].predict().squeeze()
                 self.filters[i]['last_prediction'] = estimation
-                result = dict(id=self.filters[i]['id'],
-                              location=estimation[:2],
-                              motion=estimation[2:],
-                              size=self.filters[i]['last_size'])
-                result_list.append(result)
+
+                if self.filters[i]['match_count'] >= self.min_matches:
+                    result = dict(id=self.filters[i]['id'],
+                                  location=estimation[:2],
+                                  motion=estimation[2:],
+                                  width=self.filters[i]['last_bbox'][2],
+                                  height=self.filters[i]['last_bbox'][3])
+                    result_list.append(result)
             else:
                 del self.filters[i]
 
@@ -76,16 +80,20 @@ class Tracker:
             self.filters.append(new_filter)
 
             # Add prediction to result list
+            new_filter['kalman'].predict()  # needed before first correction
             new_filter['kalman'].correct(blob_centroids[i])
-            estimation = new_filter['kalman'].predict()
+            estimation = new_filter['kalman'].predict().squeeze()
             new_filter['last_prediction'] = estimation
-            new_filter['last_size'] = (bboxes[i][2] - bboxes[i][0],
-                                       bboxes[i][3] - bboxes[i][1])
-            result = dict(id=new_filter['id'],
-                          location=estimation[:2],
-                          motion=estimation[2:],
-                          size=self.filters[i]['last_size'])
-            result_list.append(result)
+            new_filter['last_bbox'] = bboxes[i]
+            new_filter['match_count'] += 1
+
+            if new_filter['match_count'] >= self.min_matches:
+                result = dict(id=new_filter['id'],
+                              location=estimation[:2],
+                              motion=estimation[2:],
+                              width=bboxes[i][2],
+                              height=bboxes[i][3])
+                result_list.append(result)
 
         return result_list
 
@@ -98,7 +106,12 @@ class Tracker:
                                             [0, 1, 0, 1],
                                             [0, 0, 1, 0],
                                             [0, 0, 0, 1]], np.float32)
-        filter_object = dict(id=self.obj_counter, kalman=kalman, disappeared=0)
+        filter_object = dict(id=self.obj_counter,
+                             kalman=kalman,
+                             match_count=0,
+                             disapp_count=0,
+                             last_prediction=None,
+                             last_bbox=None,)
         return filter_object
 
 
@@ -108,10 +121,18 @@ class Tracker:
 
 
 def centroids(bboxes):
-    result = []
-    for b in bboxes:
-        result.append([(b[2] + b[0]) / 2, (b[3] + b[1]) / 2])
-    return np.array(result, dtype='float32')
+    """Take a sequence of bounding boxes and return their centroids
+
+    The bounding boxes are specified as (x, y, w, h) tuples. The corresponding
+    centroids are returned in a numpy array with shape [N, 2], where
+    N = len(bboxes).
+
+    """
+    bboxes = np.array(bboxes, dtype='float32')
+    x = bboxes[:, 0] + bboxes[:, 2] / 2
+    y = bboxes[:, 1] + bboxes[:, 3] / 2
+
+    return np.array([x, y], dtype='float32').T
 
 
 def euclidean_distance(a, b):
