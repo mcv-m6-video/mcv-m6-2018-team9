@@ -170,19 +170,33 @@ def euclidean_distance(a, b):
     return result
 
 
-def draw_tracking_prediction(im, pred):
+def draw_tracking_prediction(im, pred, color=(255, 153, 0)):
+    """Draw bounding boxes of the tracked objects with extra information
+
+    Each bounding box has a unique number id which is displayed. Also extra
+    information can be passed in the 'text' key of each detection dictionary in
+    the 'pred' list.
+
+    Args:
+      im: numpy array with shape [h, w, 1] or [h, w, 3].
+      pred: list of detections, one per each tracked object. Each detection is
+        a dictionary with keys: width, height, location and (optional) text.
+
+    Returns:
+      A new image with shape [h, w, 3] with the bounding boxes drawn in color
+
     """
-    """
-    orange = (255, 153, 0)
-    im2 = np.repeat(im, 3, axis=2)
+    if im.shape[2] == 1:
+        im2 = np.repeat(im, 3, axis=2)
+
     for detection in pred:
         w = int(detection['width'])
         h = int(detection['height'])
         x = int(detection['location'][0] - w / 2)
         y = int(detection['location'][1] - h / 2)
-        text = str(detection['id'])
-        cv2.rectangle(im2, (x,y), (x+w, y+h), orange, 1)
-        cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, orange, 1,
+        text = '{} {}'.format(detection['id'], detection.get('text', ''))
+        cv2.rectangle(im2, (x,y), (x+w, y+h), color, 1)
+        cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1,
                     cv2.LINE_AA)
 
     return im2
