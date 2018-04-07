@@ -87,25 +87,18 @@ def run(dataset):
     # Tracking
     # Initialize tracker with first frame and bounding box
     morph = (morph * 255).astype('uint8')
-    tracker = tracking.Tracker()
+    kalman = tracking.Tracker()
     colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
     tracker_out = []
 
-    for frame, out_im in zip(morph, test):
-        bboxes = tracking.find_bboxes(frame)
-        tracking_result = tracker.estimate(bboxes)
+    for im_bin, im_raw in zip(morph, test):
+        bboxes = tracking.find_bboxes(im_bin)
+        kalman_pred = kalman.estimate(bboxes)
+        out_im = tracking.draw_tracking_prediction(im_raw, kalman_pred)
 
         print('-----------------')
         print(bboxes)
-
-        for detection in tracking_result:
-            w = int(detection['width'])
-            h = int(detection['height'])
-            x = int(detection['location'][0] - w / 2)
-            y = int(detection['location'][1] - h / 2)
-            print(x, y, w, h)
-            cv2.rectangle(out_im, (x,y), (x+w, y+h), (0,255,0), 2)
 
         # Append result
         tracker_out.append(out_im)
@@ -113,7 +106,7 @@ def run(dataset):
     tracker_out = np.array(tracker_out)
 
     # Save individual gifs and an extra gif which compare them
-    animations.video_recorder(pred, '', f"{dataset}_orig")
-    animations.video_recorder(morph, '', f"{dataset}_morph")
-    animations.video_recorder(test_mask[1,:], '', f"{dataset}_valid")
-    animations.video_recorder(tracker_out, '', f"{dataset}_track")
+    animations.video_recorder_v2(pred, f"{dataset}_orig.gif")
+    animations.video_recorder_v2(morph, f"{dataset}_morph.gif")
+    animations.video_recorder_v2(test_mask[1,:], f"{dataset}_valid.gif")
+    animations.video_recorder_v2(tracker_out, f"{dataset}_track.gif")

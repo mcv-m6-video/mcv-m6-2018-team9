@@ -169,6 +169,25 @@ def euclidean_distance(a, b):
 
     return result
 
+
+def draw_tracking_prediction(im, pred):
+    """
+    """
+    orange = (255, 153, 0)
+    im2 = np.repeat(im, 3, axis=2)
+    for detection in pred:
+        w = int(detection['width'])
+        h = int(detection['height'])
+        x = int(detection['location'][0] - w / 2)
+        y = int(detection['location'][1] - h / 2)
+        text = str(detection['id'])
+        cv2.rectangle(im2, (x,y), (x+w, y+h), orange, 1)
+        cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, orange, 1,
+                    cv2.LINE_AA)
+
+    return im2
+
+
 def detect_blobs(im,im_out,params):
     """
 
