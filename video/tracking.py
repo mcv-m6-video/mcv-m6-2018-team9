@@ -16,7 +16,7 @@ class Tracker:
 
     def estimate(self, bboxes):
         # Centroid assignment through Hungarian algorithm
-        blob_centroids = centroids(bboxes)
+        blob_centroids = centroids(bboxes) if bboxes.size != 0 else np.array([])
         kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
         if kalman_centroids and blob_centroids.size != 0:
             kalman_centroids = np.array(kalman_centroids)

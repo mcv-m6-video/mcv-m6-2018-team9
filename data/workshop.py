@@ -3,6 +3,7 @@ import os.path
 
 import cv2
 import numpy as np
+from skimage.transform import warp
 
 
 def print_video_summary(path):
@@ -96,7 +97,7 @@ def write_sequence(src, dst, step=1, scale=1, first_frame=0, last_frame=None):
         i += step
 
 
-def read_sequence(name, colorspace='rgb'):
+def read_sequence(name, colorspace='rgb', homography=None):
     """Read a workshop sequence and load it into a numpy array
 
     Args:
@@ -123,6 +124,11 @@ def read_sequence(name, colorspace='rgb'):
             im = im[..., np.newaxis]
         else:
             raise ValueError('Unknown value for colorspace')
+
+        im = cv2.GaussianBlur(im, (5, 5), 0)
+
+        if homography is not None:
+            im = warp(im, homography) * 255
 
         im_list.append(im)
 
