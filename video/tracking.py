@@ -138,10 +138,14 @@ def centroids(bboxes):
 
     """
     bboxes = np.array(bboxes, dtype='float32')
-    x = bboxes[:, 0] + bboxes[:, 2] / 2
-    y = bboxes[:, 1] + bboxes[:, 3] / 2
+    if bboxes.size:
+        x = bboxes[:, 0] + bboxes[:, 2] / 2
+        y = bboxes[:, 1] + bboxes[:, 3] / 2
+        centroids = np.array([x, y], dtype='float32').T
+    else:
+        centroids = np.array([], dtype='float32')
 
-    return np.array([x, y], dtype='float32').T
+    return centroids
 
 
 def euclidean_distance(a, b):
