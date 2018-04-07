@@ -9,7 +9,8 @@ import numpy as np
 import cv2
 from data import workshop
 from evaluation import metrics, animations
-from video import bg_subtraction, morphology, video_stabilization, tracking
+from video import bg_subtraction, morphology, video_stabilization, tracking, \
+    optical_flow
 import matplotlib.pyplot as plt
 import time
 
@@ -36,7 +37,7 @@ def run(dataset):
     bsize = 100
     alpha_values = np.concatenate([np.linspace(0, 10, 30),
                                    np.linspace(11, 40, 10)])
-    se_close = (2, 12)
+    se_close = (3, 3)
     k = 9
     l = 30
     alpha2 = 1.38
@@ -74,6 +75,7 @@ def run(dataset):
     # train_stab = train_stab[...,np.newaxis]
 
     # Adaptive model prediction
+    #train, stab_masks = optical_flow.stabilize(train, mode='f')
     model = bg_subtraction.create_model(train)
     # model_stab = bg_subtraction.create_model_mask(train_stab,
     #                                               train_mask[1,:])
@@ -92,8 +94,8 @@ def run(dataset):
     # CLOSING
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
                                         se_close)
-    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
-                                    st_elem)
+    #clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+    #                                st_elem)
     # clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
     #                                      st_elem)
 

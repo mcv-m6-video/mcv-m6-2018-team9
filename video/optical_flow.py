@@ -323,7 +323,7 @@ def stabilize(ims_, gt = None, mode = "bac"):
 
     for i in range(1, ims_.shape[0]):
         
-        of = optical_flow.block_matching(current_image, ims_[n_im-ind + sign*i])
+        of = block_matching(current_image, ims_[n_im-ind + sign*i])
         u,v = of[:,:,0] , of[:,:,1]
         
         tform = SimilarityTransform(translation=(-u.mean() , -v.mean() ))
