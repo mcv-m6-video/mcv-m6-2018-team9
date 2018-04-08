@@ -36,7 +36,7 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r - 1))
     se_open = np.transpose(se_open.astype(np.uint8))
 
-    se_open = (5,5)
+    se_open = (20, 3)
 
     # Area for perspective correction and speed estimation
     detection_area = [(130, 23), (160, 23), (85, 160), (225, 160)]
@@ -65,9 +65,9 @@ def run(dataset):
     clean = morphology.filter_small(filled8, bsize, neighb=4)
 
     # CLOSING
-    # st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
-    # clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
-    #                                st_elem)
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
+    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+                                   st_elem)
     # clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
     #                                      st_elem)
 
