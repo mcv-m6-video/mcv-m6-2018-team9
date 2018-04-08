@@ -121,63 +121,37 @@ def run(dataset):
     # morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN,
     #                                      st_elem)
 
-    # TRACKING
-    # Setup SimpleBlobDetector parameters.
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByColor = True
-    params.blobColor = 255
-    params.filterByArea = False
-    #params.minArea = 10000
-
-    detector = cv2.SimpleBlobDetector_create(params)
+    # Kalman tracker
+    disappear_thr = 3
+    min_matches = 3
+    stabilize_prediction = 5
     morph = (morph*255).astype('uint8')
+    kalman = tracking.KalmanTracker(disappear_thr=disappear_thr,
+                                    min_matches=min_matches,
+                                    stabilize_prediction=stabilize_prediction)
+    tracker_raw = []
+    tracker_bin = []
+    frame_no = 0
 
-    # Initialize tracker with first frame and bounding box
-    trk = tracking.KalmanTracker(3, max_distance=200)
-    colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
-              (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
-    tracker_out = []
+    for im_bin, im_raw in zip(morph, test):
+        bboxes = tracking.find_bboxes(im_bin)
+        kalman_pred = kalman.estimate(bboxes)
+        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred)
+        out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
+                                                    kalman_pred)
+        # Append result
+        tracker_raw.append(out_raw)
+        tracker_bin.append(out_bin)
 
-    animations.video_recorder(pred, '', f"{dataset}_orig")
-
-    for idx in range(1, morph.shape[0]):
-        if True:
-            # Read a new frame
-            frame = morph[idx]
-            out_im = test[idx]
-
-            # Start timer
-            timer = cv2.getTickCount()
-            blob = detector.detect(frame)
-            bboxes = np.array([(bb.pt[0], bb.pt[1], bb.pt[0] + bb.size / 2,
-                                bb.pt[1] + bb.size / 2) for bb in blob])
-
-            res_bboxes = trk.estimate(bboxes)
-
-            # Draw bounding box
-            for i, cbb in enumerate(res_bboxes):
-                # Tracking success
-                p1 = (int(cbb['location'][0] - cbb['height']),
-                      int(cbb['location'][1] - cbb['width']))
-                p2 = (int(cbb['location'][0] + cbb['height']),
-                      int(cbb['location'][1] + cbb['width']))
-                cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
-
-            # Append result
-            tracker_out.append(out_im)
-
-            # Exit if ESC pressed
-            k = cv2.waitKey(50) & 0xff
-            if k == 27: break
-
-        #except Exception as e:
-        else:
-            pass
-            # print(e)
-
-    tracker_out = np.array(tracker_out)
+        # Some debug information
+        frame_no += 1
+        print('---------{:03d}---------'.format(frame_no))
+        print(bboxes)
+        for det in kalman_pred:
+            print('>>', det)
 
     # Save individual gifs and an extra gif which compare them
     animations.video_recorder(pred, '', f"{dataset}_orig")
     animations.video_recorder(morph, '', f"{dataset}_morph")
-    animations.video_recorder(tracker_out, '', f"{dataset}_track")
+    animations.video_recorder_v2(tracker_raw, f"{dataset}_track_raw.gif")
+    animations.video_recorder_v2(tracker_bin, f"{dataset}_track_bin.gif")
