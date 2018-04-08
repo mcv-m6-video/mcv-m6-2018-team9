@@ -43,11 +43,11 @@ def DLT(coords = [], dataset = None):
     #not implemented    
     elif dataset == 'traffic':
         
-    matrix = np.array([[ 1.        ,  0.        ,  0.        ],
-                   [ 0.        ,  1.        ,  0.        ],
-                   [ 0.        ,  0.00484753,  1.        ]])
-    invm = np.linalg.inv(matrix)
-    return invm
+        matrix = np.array([[ 1.        ,  0.        ,  0.        ],
+                       [ 0.        ,  1.        ,  0.        ],
+                       [ 0.        ,  0.00484753,  1.        ]])
+        invm = np.linalg.inv(matrix)
+        return invm
 
     else:
         print("couldn't definie coordinates!")
