@@ -1,3 +1,3 @@
 from . import task1_tracking
-from . import task2_tracking
-from . import task2_tracking_ms
+from . import task1_mean_shift
+from . import taskN_tracking
