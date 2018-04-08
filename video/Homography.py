@@ -82,7 +82,7 @@ def DLT(ims, coords = [], dataset = None):
     H = L.reshape(3, 3)
     inm = np.linalg.inv(H)
     
-    output_shape = np.dot(inm,p_14)
+    output_shape = np.dot(H,p_14)
     output_shape/= output_shape[2]
     
     if len(ims.shape) == 4:
