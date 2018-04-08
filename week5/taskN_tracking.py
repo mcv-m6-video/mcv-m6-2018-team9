@@ -4,7 +4,7 @@ import cv2
 from data import workshop
 from evaluation import animations
 from video import (bg_subtraction, morphology, video_stabilization, tracking,
-                   optical_flow, Homography)
+                   optical_flow, Homography, shadow_detection)
 
 
 def run(dataset):
@@ -24,27 +24,19 @@ def run(dataset):
 
     # Morphology parameters
     bsize = 100
-    se_close = (3, 3)
-    k = 9
-    l = 30
-
-    se_open = np.eye(l, dtype=np.uint8)
-    for r in range(0, k):
-        se_open = np.logical_or(se_open,
-                                    np.eye(l, dtype=np.uint8, k=r + 1))
-        se_open = np.logical_or(se_open,
-                                    np.eye(l, dtype=np.uint8, k=r - 1))
-    se_open = np.transpose(se_open.astype(np.uint8))
-
-    se_open = (20, 3)
+    se_close = (5, 5)
+    se_open = (4, 6)
+    se_dil = (20, 20)
 
     # Area for perspective correction and speed estimation
     detection_area = [(130, 23), (160, 23), (85, 160), (225, 160)]
 
     # Read dataset
     seq = workshop.read_sequence(dataset, colorspace='gray')
+    seq_rgb = workshop.read_sequence(dataset, colorspace='rgb')
     train = seq[:marker]
     test = seq[marker:]
+    test_rgb = seq_rgb[marker:]
 
     # Video stabilization and adaptive model prediction
     train, train_mask = optical_flow.stabilize(train, mode='forward')
@@ -59,6 +51,8 @@ def run(dataset):
     model = bg_subtraction.create_model_mask(train, train_mask)
     pred = bg_subtraction.predict_masked(test, test_mask, model, alpha,
                                          rho=rho)
+    shad = shadow_detection.shadow_batch(test_rgb, 0.0003, 0.0015)
+    pred = np.logical_and(pred, shad)
 
     # Morphology and filtering
     filled8 = morphology.imfill(pred, neighb=8)
@@ -68,14 +62,15 @@ def run(dataset):
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
     clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
                                    st_elem)
-    # clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
-    #                                      st_elem)
 
     # OPENING
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_open)
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN, st_elem)
-    # morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN,
-    #                                      st_elem)
+
+    # DILATION
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_dil)
+    morph = morphology.filter_morph(morph, cv2.MORPH_DILATE, st_elem)
+
 
     # Kalman tracker
     disappear_thr = 3
