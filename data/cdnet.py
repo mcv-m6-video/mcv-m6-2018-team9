@@ -119,10 +119,17 @@ def read_sequence(week, dataset, split, colorspace='rgb', annotated=True,
         dataset_train_idx = {'highway': (1050, 1200),
                              'fall': (1460, 1510),
                              'traffic': (950, 1000)}
-
         dataset_test_idx = {'highway': (1200, 1350),
                             'fall': (1510, 1560),
                             'traffic': (1000, 1050)}
+
+    elif week == 'week5':
+        dataset_train_idx = {'highway': (1050, 1350),
+                             'traffic': (950, 1050)}
+        # TODO: choose range
+        dataset_test_idx = {'highway': (1, 500),  # 1-1570
+                            'traffic': (1, 500)}  # 1-1700
+
     else:
         raise ValueError('Invalid value for week')
 

@@ -2,7 +2,8 @@ import numpy as np
 import cv2
 from data import cdnet
 from evaluation import metrics, animations
-from video import bg_subtraction, morphology, video_stabilization, tracking
+from video import (bg_subtraction, morphology, video_stabilization, tracking,
+                   optical_flow)
 import matplotlib.pyplot as plt
 import time
 
@@ -16,11 +17,12 @@ def run(dataset):
     """
     # Dataset-specific parameters
     if dataset == 'highway':
-        stabilization = False
-
         # background subtraction model
-        rho = 0.20
-        alpha = 2.8
+        rho = 0.10
+        alpha = 3
+
+        # block matching stablization
+        stabilization = False
 
         # morphology
         bsize = 50
@@ -29,12 +31,18 @@ def run(dataset):
         shadow_t1 = 0.082
         shadow_t2 = 0.017
 
-    elif dataset == 'traffic':
-        stabilization = False
+        # kalman tracker
+        min_matches = 15
+        stabilize_prediction = 5
+        disappear_thr = 3
 
+    elif dataset == 'traffic':
         # background subtraction model
-        rho = 0.15
-        alpha = 2.25
+        rho = 0.10
+        alpha = 3
+
+        # block matching stablization
+        stabilization = True
 
         # morphology
         bsize = 400
@@ -50,6 +58,11 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r - 1))
         se_open = np.transpose(se_open.astype(np.uint8))
 
+        # kalman tracker
+        min_matches = 10
+        stabilize_prediction = 5
+        disappear_thr = 3
+
     # Read dataset
     train, gt_train = cdnet.read_sequence('week5', dataset, 'train',
                                           colorspace='gray',annotated=True)
@@ -58,18 +71,12 @@ def run(dataset):
 
     if stabilization:
         # Stabilize sequences
-        train, train_mask = video_stabilization.ngiaho_stabilization(
-            train, gt_train, '.', 0, 320)
-        test, test_mask = video_stabilization.ngiaho_stabilization(
-            test, gt_test, '.', 0, 320)
-
-        # Add axis
-        train = train[..., np.newaxis]
-        test = test[..., np.newaxis]
+        train, train_mask = optical_flow.stabilize(train, mode='forward')
+        test, test_mask = optical_flow.stabilize(test, mode='forward')
 
         # Adaptive model prediction
-        model = bg_subtraction.create_model_mask(train, train_mask[1,:])
-        pred = bg_subtraction.predict_masked(test, test_mask[1], model, alpha,
+        model = bg_subtraction.create_model_mask(train, train_mask)
+        pred = bg_subtraction.predict_masked(test, test_mask, model, alpha,
                                              rho=rho)
     else:
         # Adaptive model prediction
@@ -95,7 +102,9 @@ def run(dataset):
     # Tracking
     # Initialize tracker with first frame and bounding box
     morph = (morph * 255).astype('uint8')
-    kalman = tracking.KalmanTracker(min_matches=5, stabilize_prediction=5)
+    kalman = tracking.KalmanTracker(disappear_thr=disappear_thr,
+                                    min_matches=min_matches,
+                                    stabilize_prediction=stabilize_prediction)
     tracker_raw = []
     tracker_bin = []
 

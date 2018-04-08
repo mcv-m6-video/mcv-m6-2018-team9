@@ -104,7 +104,7 @@ def run(dataset):
     else:
         seq_track = (morph*255).astype('uint8')
 
-    mot = tracking.MultipleObjectsTracker(min_area,min_shift2)
+    mot = tracking.MeanShiftTracker(min_area,min_shift2)
 
     tracker_out = []
 
