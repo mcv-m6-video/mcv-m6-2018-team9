@@ -3,16 +3,17 @@ import numpy as np
 
 #Define p corr to an image of max distance between pairs (in x and y)
 #Correspondences Hand picked!
-#Highway
 def p(p):
     return np.array([p[0], p[1], 1])
 
-def DLT(coords = [], dataset = None):
+def DLT(ims, coords = [], dataset = None):
     
     
     '''
     Homography for flattening straight roads.
-    Params= coords: 
+    Params= 
+            ims: list of images
+            coords: 
                 list of tuples: 1st coordinate of future top left vertex
                                 2nd coordinate of future top right vertex
                                 3rd coordinate of future bottom left vertex
@@ -21,12 +22,11 @@ def DLT(coords = [], dataset = None):
             do not supply coords if this selected)
     '''
     if len(coords) == 4:
+        
         p_11 = p(coords[0])
         p_12 = p(coords[1])
         p_13 = p(coords[2])
         p_14 = p(coords[3])
-        
-        
         
     elif dataset == 'highway':
 
@@ -63,12 +63,12 @@ def DLT(coords = [], dataset = None):
     p_22 = p((max(p1[:,0]) - min(p1[:,0]), 0))
     p_23 = p((0, max(p1[:,1]) - min(p1[:,1])))
     p_24 = p((max(p1[:,0]) - min(p1[:,0]), max(p1[:,1]) - min(p1[:,1])))    
+  
 
     p2 = np.array([p_21, p_22, p_23, p_24])
     
     
     #DLT
-
     A = []
     for i in range(0, len(p1)):
         x, y = p1[i][0], p1[i][1]
@@ -79,4 +79,20 @@ def DLT(coords = [], dataset = None):
     U, S, Vh = np.linalg.svd(A)
     L = Vh[-1,:] / Vh[-1,-1]
     H = L.reshape(3, 3)
-    return np.linalg.inv(H)
+    inm = np.linalg.inv(H)
+    
+    output_shape = np.dot(inm,p_14)
+    output_shape/= output_shape[2]
+    
+
+    
+    if len(ims.shape) == 4:
+        wims = np.zeros((ims.shape[0], output_shape[0].astype(int), output_shape[1].astype(int),ims.shape[3]) )
+    else:
+        wims = np.zeros((ims.shape[0], output_shape[0].astype(int), output_shape[1].astype(int)) )
+    
+    for i in range(ims.shape[0]):
+        wims[i] = warp(ims[i], inm, output_shape=output_shape[:2].astype(int))
+        
+    return wims
+
