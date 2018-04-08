@@ -84,23 +84,21 @@ def run(dataset):
     morph = (morph*255).astype('uint8')
     kalman = tracking.KalmanTracker(disappear_thr=disappear_thr,
                                     min_matches=min_matches,
-                                    stabilize_prediction=stabilize_prediction)
+                                    stabilize_prediction=stabilize_prediction,
+                                    detection_area=detection_area)
     tracker_raw = []
     tracker_bin = []
     frame_no = 0
+    roi = [detection_area[0], detection_area[1], detection_area[3],
+           detection_area[2]]
 
     for im_bin, im_raw in zip(morph, test):
         bboxes = tracking.find_bboxes(im_bin)
         kalman_pred = kalman.estimate(bboxes)
-        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred)
+        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred,
+                                                    roi=roi)
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
-                                                    kalman_pred)
-
-        # roi = [detection_area[0], detection_area[1], detection_area[3],
-        #        detection_area[2]]
-        # roi = np.reshape(roi, (1, -1, 1, 2))
-        # out_raw = cv2.polylines(out_raw, roi, True, (240, 30, 0), 1,
-        #                         cv2.LINE_AA)
+                                                    kalman_pred, roi=roi)
 
         # Append result
         tracker_raw.append(out_raw)
