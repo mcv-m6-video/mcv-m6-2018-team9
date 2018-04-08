@@ -85,15 +85,16 @@ def DLT(ims, coords = [], dataset = None):
     output_shape = np.dot(inm,p_14)
     output_shape/= output_shape[2]
     
-
-    
     if len(ims.shape) == 4:
-        wims = np.zeros((ims.shape[0], output_shape[0].astype(int), output_shape[1].astype(int),ims.shape[3]) )
+        wims = np.zeros((ims.shape[0], output_shape[1].astype(int), output_shape[0].astype(int),ims.shape[3]) )
     else:
-        wims = np.zeros((ims.shape[0], output_shape[0].astype(int), output_shape[1].astype(int)) )
+        wims = np.zeros((ims.shape[0], output_shape[1].astype(int), output_shape[0].astype(int)) )
     
     for i in range(ims.shape[0]):
-        wims[i] = warp(ims[i], inm, output_shape=output_shape[:2].astype(int))
+        wims[i] = warp(ims[i], inm, output_shape=output_shape[:2][::-1].astype(int))
         
     return wims
+
+        
+
 
