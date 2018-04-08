@@ -91,7 +91,9 @@ def DLT(ims, coords = [], dataset = None):
         wims = np.zeros((ims.shape[0], output_shape[1].astype(int), output_shape[0].astype(int)) )
     
     for i in range(ims.shape[0]):
-        wims[i] = warp(ims[i], inm, output_shape=output_shape[:2][::-1].astype(int))
+        wim = warp(ims[i], inm, output_shape=output_shape[:2][::-1].astype(int))
+        wim = wim * 255
+        wims[i] = wim.astype(np.uint8)
         
     return wims
 
