@@ -35,7 +35,7 @@ def run(dataset):
         #join th threshold to group rectangles. 0 -> keep all / inf -> keep 1
         #in traffic we are only ev
         join_th = 10000
-        gk=(5,5)
+        gk=(3,3)
         min_area = 1500
         min_shift2 = 5
 
@@ -135,4 +135,4 @@ def run(dataset):
     animations.video_recorder(morph, '', f"{dataset}_morph")
     animations.video_recorder(morph_stab, '', f"{dataset}_morph_stab")
     animations.video_recorder(gt[1,:], '', f"{dataset}_valid")
-    animations.video_recorder(tracker_out, '', f"{dataset}_track")
+    animations.video_recorder(tracker_out, '', f"{dataset}_track", 'mp4V','mp4')

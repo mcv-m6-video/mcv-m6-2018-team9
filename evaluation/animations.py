@@ -53,10 +53,8 @@ def video_recorder(images, out_path, out_filename, codec=None, out_ext='gif'):
         fourcc = cv.VideoWriter_fourcc(*codec)
         video_out = cv.VideoWriter(out_path+out_filename+'.'+out_ext, fourcc, 10,
                                    (int(w), int(h)), color)
-        print('images shape: '+str(images.shape))
         for i, im in enumerate(images):
             if color:
-                print('im shape ',im.shape)
                 im_out = np.uint8(im)
             else:
                 im_out = np.uint8(im * 255)
