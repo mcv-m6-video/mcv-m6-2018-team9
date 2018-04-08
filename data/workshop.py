@@ -132,4 +132,4 @@ def read_sequence(name, colorspace='rgb', homography=None):
 
         im_list.append(im)
 
-    return np.array(im_list, dtype='float32')
+    return np.array(im_list, dtype='uint8')
