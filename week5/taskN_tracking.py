@@ -88,18 +88,18 @@ def run(dataset):
     test, __ = optical_flow.stabilize(test, mode='f')
     train = Homography.DLT(train, coords)
     test = Homography.DLT(test, coords)
-    train = train.astype(np.uint8)
-    test = test.astype(np.uint8)
-    train, mask_train = optical_flow.stabilize(train, mode='f')
-    test, mask_test = optical_flow.stabilize(test, mode='f')
+    # train = train.astype(np.uint8)
+    # test = test.astype(np.uint8)
+    # train, mask_train = optical_flow.stabilize(train, mode='f')
+    # test, mask_test = optical_flow.stabilize(test, mode='f')
     animations.video_recorder(train, '', f"{dataset}_train_stab")
     animations.video_recorder(test, '', f"{dataset}_test_stab")
-    model = bg_subtraction.create_model_mask(train, mask_train[1, :])
+    model = bg_subtraction.create_model(train)
     # model_stab = bg_subtraction.create_model_mask(train_stab,
     #                                               train_mask[1,:])
 
 
-    pred = bg_subtraction.predict_masked(test, mask_test[1, :], model, alpha2, rho=rho)
+    pred = bg_subtraction.predict(test, model, alpha2, rho=rho)
     # pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1],
     #                                     model_stab, alpha2, rho=rho[dataset])
 
