@@ -138,10 +138,14 @@ def centroids(bboxes):
 
     """
     bboxes = np.array(bboxes, dtype='float32')
-    x = bboxes[:, 0] + bboxes[:, 2] / 2
-    y = bboxes[:, 1] + bboxes[:, 3] / 2
+    if bboxes.size:
+        x = bboxes[:, 0] + bboxes[:, 2] / 2
+        y = bboxes[:, 1] + bboxes[:, 3] / 2
+        centroids = np.array([x, y], dtype='float32').T
+    else:
+        centroids = np.array([], dtype='float32')
 
-    return np.array([x, y], dtype='float32').T
+    return centroids
 
 
 def euclidean_distance(a, b):
@@ -164,6 +168,39 @@ def euclidean_distance(a, b):
         result[i] = np.linalg.norm(b - a[i], axis=1)
 
     return result
+
+
+def draw_tracking_prediction(im, pred, color=(255, 153, 0)):
+    """Draw bounding boxes of the tracked objects with extra information
+
+    Each bounding box has a unique number id which is displayed. Also extra
+    information can be passed in the 'text' key of each detection dictionary in
+    the 'pred' list.
+
+    Args:
+      im: numpy array with shape [h, w, 1] or [h, w, 3].
+      pred: list of detections, one per each tracked object. Each detection is
+        a dictionary with keys: width, height, location and (optional) text.
+
+    Returns:
+      A new image with shape [h, w, 3] with the bounding boxes drawn in color
+
+    """
+    if im.shape[2] == 1:
+        im2 = np.repeat(im, 3, axis=2)
+
+    for detection in pred:
+        w = int(detection['width'])
+        h = int(detection['height'])
+        x = int(detection['location'][0] - w / 2)
+        y = int(detection['location'][1] - h / 2)
+        text = '{} {}'.format(detection['id'], detection.get('text', ''))
+        cv2.rectangle(im2, (x,y), (x+w, y+h), color, 1)
+        cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1,
+                    cv2.LINE_AA)
+
+    return im2
+
 
 def detect_blobs(im,im_out,params):
     """
@@ -194,6 +231,63 @@ def detect_blobs(im,im_out,params):
     return im_disp, bbox
 
 
+def non_max_suppression(boxes, overlapThresh):
+   # if there are no boxes, return an empty list
+   if len(boxes) == 0:
+      return []
+
+   # if the bounding boxes integers, convert them to floats --
+   # this is important since we'll be doing a bunch of divisions
+   if boxes.dtype.kind == "i":
+      boxes = boxes.astype("float")
+#
+   # initialize the list of picked indexes
+   pick = []
+
+   # grab the coordinates of the bounding boxes
+   x1 = boxes[:,0]
+   y1 = boxes[:,1]
+   x2 = boxes[:,2]
+   y2 = boxes[:,3]
+
+   # compute the area of the bounding boxes and sort the bounding
+   # boxes by the bottom-right y-coordinate of the bounding box
+   area = (x2 - x1 + 1) * (y2 - y1 + 1)
+   idxs = np.argsort(y2)
+
+   # keep looping while some indexes still remain in the indexes
+   # list
+   while len(idxs) > 0:
+      # grab the last index in the indexes list and add the
+      # index value to the list of picked indexes
+      last = len(idxs) - 1
+      i = idxs[last]
+      pick.append(i)
+
+      # find the largest (x, y) coordinates for the start of
+      # the bounding box and the smallest (x, y) coordinates
+      # for the end of the bounding box
+      xx1 = np.maximum(x1[i], x1[idxs[:last]])
+      yy1 = np.maximum(y1[i], y1[idxs[:last]])
+      xx2 = np.minimum(x2[i], x2[idxs[:last]])
+      yy2 = np.minimum(y2[i], y2[idxs[:last]])
+
+      # compute the width and height of the bounding box
+      w = np.maximum(0, xx2 - xx1 + 1)
+      h = np.maximum(0, yy2 - yy1 + 1)
+
+      # compute the ratio of overlap
+      overlap = (w * h) / area[idxs[:last]]
+
+      # delete all indexes from the index list that have
+      idxs = np.delete(idxs, np.concatenate(([last],
+         np.where(overlap > overlapThresh)[0])))
+
+   # return only the bounding boxes that were picked using the
+   # integer data type
+   return boxes[pick].astype("int")
+
+
 class MultipleObjectsTracker:
     """Multiple-objects tracker
         This class implements an algorithm for tracking multiple objects in
@@ -221,7 +315,7 @@ class MultipleObjectsTracker:
         self.term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
                           100, 1)
 
-    def advance_frame(self, frame, proto_objects_map):
+    def advance_frame(self, frame, proto_objects_map,join_th=0.2):
         """Advances the algorithm by a single frame
             This method tracks all objects via the following steps:
              - adds all bounding boxes from saliency map as potential
@@ -250,21 +344,22 @@ class MultipleObjectsTracker:
         # find all bounding boxes extrapolated from last frame
         # via mean-shift tracking
         box_all = self._append_boxes_from_meanshift(frame, box_all)
-
         # only keep those that are both salient and in mean shift
         if len(self.object_roi) == 0:
             group_thresh = 0  # no previous frame: keep all form saliency
         else:
             group_thresh = 1  # previous frame + saliency
-        box_grouped, _ = cv2.groupRectangles(box_all, group_thresh, 0.1)
-
+        box_grouped, _ = cv2.groupRectangles(box_all, group_thresh, join_th)
+        #box_grouped = non_max_suppression(box_grouped,50)
         # update mean-shift bookkeeping for remaining boxes
         self._update_mean_shift_bookkeeping(frame, box_grouped)
 
         # draw remaining boxes
+        print(box_grouped)
         for (x, y, w, h) in box_grouped:
-            cv2.rectangle(self.tracker, (x, y), (x + w, y + h),
-                          (0, 255, 0), 2)
+            if((0.5 <= w/h <= 2) & (0.5 <= h/w <= 2)):
+                cv2.rectangle(self.tracker, (x, y), (x + w, y + h),
+                            (0, 255, 0), 2)
 
         return self.tracker
 
@@ -301,7 +396,6 @@ class MultipleObjectsTracker:
             :box_all: append bounding boxes from tracking to this list
             :returns: new list of all collected bounding boxes
         """
-        print(box_all)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         for i in range(len(self.object_roi)):

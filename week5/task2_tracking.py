@@ -25,6 +25,7 @@ def run(dataset):
         k = 9
         l = 30
         alpha2 = 1.38
+        rho = 0.20
 
         se_open = np.eye(l, dtype=np.uint8)
         for r in range(0, k):
@@ -181,6 +182,7 @@ def run(dataset):
     tracker_out = np.array(tracker_out)
 
     # Save individual gifs and an extra gif which compare them
+    animations.video_recorder(morph, '', f"{dataset}_morph")
     animations.video_recorder(pred, '', f"{dataset}_orig")
     animations.video_recorder(test_mask[1,:], '', f"{dataset}_valid")
     animations.video_recorder(tracker_out, '', f"{dataset}_track")
