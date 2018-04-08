@@ -346,7 +346,7 @@ def non_max_suppression(boxes, overlapThresh):
    return boxes[pick].astype("int")
 
 
-class MultipleObjectsTracker:
+class MeanShiftTracker:
     """Multiple-objects tracker
         This class implements an algorithm for tracking multiple objects in
         a video sequence.
