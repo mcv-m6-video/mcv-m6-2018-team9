@@ -57,7 +57,6 @@ class KalmanTracker:
             match_i = []
             match_j = []
 
-        result_list = []
         unmatched_kalman = list(range(len(self.filters)))
         unmatched_blobs = list(range(len(blob_centroids)))
 
@@ -83,6 +82,10 @@ class KalmanTracker:
                     self.filters[i]['centroid'] = estimation[:2]
                 else:
                     self.filters[i]['centroid'] = blob_centroids[j]
+
+            else:
+                print('unmatch filter #{} from blob #{}'.format(
+                    self.filters[i]['id'], j))
 
         unmatched_kalman = list(filter(lambda a: a is not None, unmatched_kalman))
         unmatched_blobs = list(filter(lambda a: a is not None, unmatched_blobs))
