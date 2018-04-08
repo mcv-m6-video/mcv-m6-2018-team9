@@ -4,22 +4,53 @@ import scipy.optimize as opt
 import copy
 
 
-class Tracker:
+class KalmanTracker:
 
-    def __init__(self, disappear_thr=3, min_matches=5, max_distance=100):
+    def __init__(self, disappear_thr=3, min_matches=5, stabilize_prediction=10,
+                 max_distance=100):
+        """Kalman filter for multi-object tracking
+
+        Args:
+
+          disappear_thr: (int) when a tracked object was not found during
+            `disappear_thr` consecutive frames, the object is removed from the
+            list of tracked objects.
+
+          min_matches: (int) minimum number of frames an object must be
+            detected to be included in the list of tracked objects.
+
+          stabilize_prediction: (int) given a tracked object, wait until
+            `stabilize_prediction` predictions before using the kalman
+            prediction. During the stabilization process, the bounding box
+            centroid is returned.
+
+          max_distance: (int)
+
+        """
         self.filters = []
         self.min_matches = min_matches
         self.disappear_thr = disappear_thr
         self.obj_counter = 0
+        self.stabilize_prediction = stabilize_prediction
         self.max_distance = max_distance  # max distance traversed by an object
                                           # between frames
 
     def estimate(self, bboxes):
+        """Execute the tracking process
+
+        Args:
+          bboxes: list of bounding boxes corresponding to detected blobs in the
+            scene.
+
+        Returns:
+          List of dicts, each one containing the information of a tracked object.
+          Relevant keys: id, centroid, size, motion.
+
+        """
         # Centroid assignment through Hungarian algorithm
         blob_centroids = centroids(bboxes)
-        kalman_centroids = [kf['last_prediction'][:2] for kf in self.filters]
-        if kalman_centroids and blob_centroids.size != 0:
-            kalman_centroids = np.array(kalman_centroids)
+        kalman_centroids = np.array([kf['centroid'] for kf in self.filters])
+        if kalman_centroids.size and blob_centroids.size:
             dist = euclidean_distance(kalman_centroids, blob_centroids)
             match_i, match_j = opt.linear_sum_assignment(dist)
         else:
@@ -35,44 +66,42 @@ class Tracker:
             if dist[i, j] <= self.max_distance:
                 unmatched_kalman[i] = None
                 unmatched_blobs[j] = None
+
                 # First correct, then predict
                 self.filters[i]['kalman'].correct(blob_centroids[j])
                 estimation = self.filters[i]['kalman'].predict().squeeze()
-                self.filters[i]['last_prediction'] = estimation
-                self.filters[i]['last_bbox'] = bboxes[j]
+
+                # Update filter info
                 self.filters[i]['match_count'] += 1  # increase counter
                 self.filters[i]['disapp_count'] = 0  # reset counter
+                self.filters[i]['size'] = bboxes[j][2:]
+                self.filters[i]['motion'] = estimation[2:]
+                self.filters[i]['visible'] = (self.filters[i]['match_count'] >=
+                                              self.min_matches)
 
-                if self.filters[i]['match_count'] >= self.min_matches:
-                    result = dict(id=self.filters[i]['id'],
-                                  location=estimation[:2],
-                                  motion=estimation[2:],
-                                  width=self.filters[i]['last_bbox'][2],
-                                  height=self.filters[i]['last_bbox'][3])
-                    result_list.append(result)
+                if self.filters[i]['match_count'] > self.stabilize_prediction:
+                    self.filters[i]['centroid'] = estimation[:2]
+                else:
+                    self.filters[i]['centroid'] = blob_centroids[j]
 
         unmatched_kalman = list(filter(lambda a: a is not None, unmatched_kalman))
         unmatched_blobs = list(filter(lambda a: a is not None, unmatched_blobs))
 
         # Manage unmatched kalman filters
         for i in reversed(unmatched_kalman):
-            # Increase disappeared counter
             self.filters[i]['disapp_count'] += 1
 
-            # Remove if exceeds threshold, otherwise predict
-            if self.filters[i]['disapp_count'] < self.disappear_thr:
-                estimation = self.filters[i]['kalman'].predict().squeeze()
-                self.filters[i]['last_prediction'] = estimation
-
-                if self.filters[i]['match_count'] >= self.min_matches:
-                    result = dict(id=self.filters[i]['id'],
-                                  location=estimation[:2],
-                                  motion=estimation[2:],
-                                  width=self.filters[i]['last_bbox'][2],
-                                  height=self.filters[i]['last_bbox'][3])
-                    result_list.append(result)
-            else:
+            # Remove if exceeds dissapeared threshold
+            if self.filters[i]['disapp_count'] > self.disappear_thr:
                 del self.filters[i]
+                continue
+
+            # Predict and update filter info
+            estimation = self.filters[i]['kalman'].predict().squeeze()
+            self.filters[i]['centroid'] = estimation[:2]
+            self.filters[i]['motion'] = estimation[2:]
+            self.filters[i]['visible'] = (self.filters[i]['match_count'] >=
+                                          self.min_matches)
 
         # Manage unmatched blobs
         for i in unmatched_blobs:
@@ -80,23 +109,28 @@ class Tracker:
             new_filter = self._create_kalman_filter()
             self.filters.append(new_filter)
 
-            # Add prediction to result list
+            # Prediction
             new_filter['kalman'].predict()  # needed before first correction
             new_filter['kalman'].correct(blob_centroids[i])
             estimation = new_filter['kalman'].predict().squeeze()
-            new_filter['last_prediction'] = estimation
-            new_filter['last_bbox'] = bboxes[i]
+
+            # Update filter info
+            new_filter['size'] = bboxes[i][2:]
+            new_filter['motion'] = estimation[2:]
             new_filter['match_count'] += 1
+            new_filter['visible'] = (new_filter['match_count'] >=
+                                     self.min_matches)
 
-            if new_filter['match_count'] >= self.min_matches:
-                result = dict(id=new_filter['id'],
-                              location=estimation[:2],
-                              motion=estimation[2:],
-                              width=bboxes[i][2],
-                              height=bboxes[i][3])
-                result_list.append(result)
+            if new_filter['match_count'] > self.stabilize_prediction:
+                new_filter['centroid'] = estimation[:2]
+            else:
+                new_filter['centroid'] = blob_centroids[i]
 
-        return result_list
+        # for f in self.filters:
+        #     print("++", f)
+
+        visible_list = list(filter(lambda f: f['visible'], self.filters))
+        return visible_list
 
     def _create_kalman_filter(self):
         self.obj_counter += 1
@@ -109,10 +143,12 @@ class Tracker:
                                             [0, 0, 0, 1]], np.float32)
         filter_object = dict(id=self.obj_counter,
                              kalman=kalman,
+                             centroid=np.zeros((1, 2), dtype='float32'),
+                             size=np.zeros((1, 2), dtype='float32'), # width, height
+                             motion=np.zeros((1, 2), dtype='float32'),
                              match_count=0,
                              disapp_count=0,
-                             last_prediction=None,
-                             last_bbox=None,)
+                             visible=False)
         return filter_object
 
 
@@ -188,12 +224,14 @@ def draw_tracking_prediction(im, pred, color=(255, 153, 0)):
     """
     if im.shape[2] == 1:
         im2 = np.repeat(im, 3, axis=2)
+    else:
+        im2 = im.copy()  # assuming 3-channel image
 
     for detection in pred:
-        w = int(detection['width'])
-        h = int(detection['height'])
-        x = int(detection['location'][0] - w / 2)
-        y = int(detection['location'][1] - h / 2)
+        w = int(detection['size'][0])
+        h = int(detection['size'][1])
+        x = int(detection['centroid'][0] - w / 2)
+        y = int(detection['centroid'][1] - h / 2)
         text = '{} {}'.format(detection['id'], detection.get('text', ''))
         cv2.rectangle(im2, (x,y), (x+w, y+h), color, 1)
         cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1,
