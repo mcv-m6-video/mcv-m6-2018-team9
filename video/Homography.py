@@ -7,13 +7,12 @@ from skimage.transform import warp
 def p(p):
     return np.array([p[0], p[1], 1])
 
-def DLT(ims, coords = [], dataset = None):
-    
-    
+
+def DLT(coords = [], dataset = None):
+
     '''
     Homography for flattening straight roads.
     Params= 
-            ims: list of images
             coords: 
                 list of tuples: 1st coordinate of future top left vertex
                                 2nd coordinate of future top right vertex
@@ -81,6 +80,26 @@ def DLT(ims, coords = [], dataset = None):
     L = Vh[-1,:] / Vh[-1,-1]
     H = L.reshape(3, 3)
     inm = np.linalg.inv(H)
+    
+    return inm
+
+def DLT_warp(ims, coords = [], dataset = None):
+    
+    
+    '''
+    Homography for flattening straight roads.
+    Params= 
+            ims: list of images
+            coords: 
+                list of tuples: 1st coordinate of future top left vertex
+                                2nd coordinate of future top right vertex
+                                3rd coordinate of future bottom left vertex
+                                3rd coordinate of future bottom right vertex
+            dataset: optional, highway or traffic (only highway tested! 
+            do not supply coords if this selected)
+    '''
+
+    inm = DLT(coords, dataset)
     
     output_shape = np.dot(H,p_14)
     output_shape/= output_shape[2]
