@@ -127,8 +127,8 @@ def read_sequence(name, colorspace='rgb', homography=None):
 
         im = cv2.GaussianBlur(im, (5, 5), 0)
 
-        if homography is not None:
-            im = warp(im, homography) * 255
+        #if homography is not None:
+        #    im = warp(im, homography, output_shape=im.shape) * 255
 
         im_list.append(im)
 

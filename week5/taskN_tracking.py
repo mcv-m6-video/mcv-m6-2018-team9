@@ -44,7 +44,6 @@ def run(dataset):
 
     coords = [(130, 23), (160, 23), (95, 138),
               (225, 160)]
-    H = Homography.DLT(coords)
 
     se_open = np.eye(l, dtype=np.uint8)
     for r in range(0, k):
@@ -65,7 +64,7 @@ def run(dataset):
     # test, gt = cdnet.read_sequence('week4', dataset, 'test',
     #                                colorspace='gray', annotated=True)
 
-    seq = workshop.read_sequence(dataset, colorspace='rgb', homography=H)
+    seq = workshop.read_sequence(dataset, colorspace='rgb')
 
     train = seq[:marker]
     test = seq[marker:]
@@ -87,6 +86,8 @@ def run(dataset):
     animations.video_recorder(test, '', f"{dataset}_test_unstab")
     train, __ = optical_flow.stabilize(train, mode='f')
     test, __ = optical_flow.stabilize(test, mode='f')
+    train = Homography.DLT(train, coords)
+    test = Homography.DLT(test, coords)
     animations.video_recorder(train, '', f"{dataset}_train_stab")
     animations.video_recorder(test, '', f"{dataset}_test_stab")
     model = bg_subtraction.create_model(train)
@@ -105,8 +106,8 @@ def run(dataset):
     # clean_stab = morphology.filter_small(filled8_stab, bsize, neighb=4)
 
     # CLOSING
-    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
-    #clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
+    # st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
+    # clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
     #                                st_elem)
     # clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
     #                                      st_elem)
@@ -132,7 +133,7 @@ def run(dataset):
     morph = (morph*255).astype('uint8')
 
     # Initialize tracker with first frame and bounding box
-    trk = tracking.Tracker(3, max_distance=200)
+    trk = tracking.KalmanTracker(3, max_distance=200)
     colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
     tracker_out = []
