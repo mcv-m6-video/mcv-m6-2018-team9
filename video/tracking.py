@@ -7,18 +7,15 @@ import copy
 class KalmanTracker:
 
     def __init__(self, disappear_thr=3, min_matches=5, stabilize_prediction=10,
-                 max_distance=100):
+                 max_distance=100, detection_area=None):
         """Kalman filter for multi-object tracking
 
         Args:
-
           disappear_thr: (int) when a tracked object was not found during
             `disappear_thr` consecutive frames, the object is removed from the
             list of tracked objects.
-
           min_matches: (int) minimum number of frames an object must be
             detected to be included in the list of tracked objects.
-
           stabilize_prediction: (int) given a tracked object, wait until
             `stabilize_prediction` predictions before using the kalman
             prediction. During the stabilization process, the bounding box
@@ -34,6 +31,7 @@ class KalmanTracker:
         self.stabilize_prediction = stabilize_prediction
         self.max_distance = max_distance  # max distance traversed by an object
                                           # between frames
+        self.detection_area = detection_area
 
     def estimate(self, bboxes):
         """Execute the tracking process
@@ -130,6 +128,12 @@ class KalmanTracker:
             else:
                 new_filter['centroid'] = blob_centroids[i]
 
+        # Hide bounding boxes outside the detection area
+        if self.detection_area is not None:
+            for f in self.filters:
+                if not point_inside(f['centroid'], self.detection_area):
+                    f['visible'] = False
+
         # for f in self.filters:
         #     print("++", f)
 
@@ -159,7 +163,6 @@ class KalmanTracker:
 ############################################
 # Auxiliary functions
 ############################################
-
 
 def find_bboxes(im):
     """Given a binary image, find its blobs and return their bounding boxes"""
@@ -226,7 +229,25 @@ def euclidean_distance(a, b):
     return result
 
 
-def draw_tracking_prediction(im, pred, color=(255, 153, 0)):
+def point_inside(point, polygon):
+    """Determine if a point is inside the polygon
+
+    Args:
+      points: tuple (x,y) or numpy array with the same shape.
+      polygon: vertices (x,y) which define the polygon, either as a list of
+        tuples or as a numpy array of shape [2, num_vertices].
+
+    Returns:
+      True if point is inside or on the boundary of the polygon, False
+      otherwise.
+
+    """
+    polygon = np.reshape(polygon, (-1, 1, 2))
+    return (cv2.pointPolygonTest(polygon, tuple(point), False) >= 0)
+
+
+def draw_tracking_prediction(im, pred, color=(255, 153, 0), roi=None,
+                             roi_color=(240, 30, 0)):
     """Draw bounding boxes of the tracked objects with extra information
 
     Each bounding box has a unique number id which is displayed. Also extra
@@ -246,6 +267,10 @@ def draw_tracking_prediction(im, pred, color=(255, 153, 0)):
         im2 = np.repeat(im, 3, axis=2)
     else:
         im2 = im.copy()  # assuming 3-channel image
+
+    if roi is not None:
+        roi = np.reshape(roi, (1, -1, 1, 2))
+        im2 = cv2.polylines(im2, roi, True, (240, 30, 0), 1, cv2.LINE_AA)
 
     for detection in pred:
         w = int(detection['size'][0])
