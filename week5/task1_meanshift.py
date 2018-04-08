@@ -7,16 +7,12 @@ import numpy as np
 from os import path
 from data import cdnet
 from evaluation import metrics, animations
-from video import bg_subtraction, morphology, optical_flow, tracking
-from week5 import saliency
+from video import bg_subtraction, morphology, optical_flow, tracking, saliency
 
 
 compareOutput = 0
 maxWidth = 320
 out_path = '.'
-
-(major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
-
 
 def run(dataset):
 
@@ -31,6 +27,7 @@ def run(dataset):
         #alpha2 = 1.38
         alpha2=2.24
         rho = 0.15
+
         #TRACKING PARAMS
         #join th threshold to group rectangles. 0 -> keep all / inf -> keep 1
         #in traffic we are only ev
