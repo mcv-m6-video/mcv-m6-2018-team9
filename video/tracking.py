@@ -184,6 +184,22 @@ def centroids(bboxes):
     return centroids
 
 
+def areas(bboxes):
+    """Take a sequence of bounding boxes and return their areas
+
+    The bounding boxes are specified as (x, y, w, h) tuples. The corresponding
+    areas are returned in a numpy array with shape (N,), with N = len(bboxes).
+
+    """
+    bboxes = np.array(bboxes, dtype='float32')
+    if bboxes.size:
+        area = bboxes[:, 2] * bboxes[:, 3]
+    else:
+        area = np.array([], dtype='float32')
+
+    return area
+
+
 def euclidean_distance(a, b):
     """Compute the euclidean distance between points in a and b
 
