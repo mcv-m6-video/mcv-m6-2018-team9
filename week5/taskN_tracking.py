@@ -141,7 +141,7 @@ def run(dataset):
     animations.video_recorder(pred, '', f"{dataset}_orig")
 
     for idx in range(1, morph.shape[0]):
-        if True:
+        try:
             # Read a new frame
             frame = morph[idx]
             out_im = test[idx]
@@ -157,10 +157,10 @@ def run(dataset):
             # Draw bounding box
             for i, cbb in enumerate(res_bboxes):
                 # Tracking success
-                p1 = (int(cbb['location'][0] - cbb['height']),
-                      int(cbb['location'][1] - cbb['width']))
-                p2 = (int(cbb['location'][0] + cbb['height']),
-                      int(cbb['location'][1] + cbb['width']))
+                p1 = (int(cbb['centroid'][0] - cbb['size'][1]),
+                      int(cbb['centroid'][1] - cbb['size'][0]))
+                p2 = (int(cbb['centroid'][0] + cbb['size'][1]),
+                      int(cbb['centroid'][1] + cbb['size'][0]))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
 
             # Append result
@@ -170,8 +170,8 @@ def run(dataset):
             k = cv2.waitKey(50) & 0xff
             if k == 27: break
 
-        #except Exception as e:
-        else:
+        except Exception as e:
+        #else:
             pass
             # print(e)
 
