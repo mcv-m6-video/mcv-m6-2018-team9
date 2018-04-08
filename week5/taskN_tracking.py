@@ -10,7 +10,7 @@ import cv2
 from data import workshop
 from evaluation import metrics, animations
 from video import bg_subtraction, morphology, video_stabilization, tracking, \
-    optical_flow
+    optical_flow, Homography
 import matplotlib.pyplot as plt
 import time
 
@@ -29,7 +29,7 @@ def run(dataset):
     elif dataset == 'sequence2':
         marker = 80
     elif dataset == 'sequence3':
-        marker = 150
+        marker = 100
     else:
         raise Exception('Wrong dataset')
 
@@ -42,6 +42,10 @@ def run(dataset):
     l = 30
     alpha2 = 1.38
 
+    coords = [(130, 23), (160, 23), (95, 138),
+              (225, 160)]
+    H = Homography.DLT(coords)
+
     se_open = np.eye(l, dtype=np.uint8)
     for r in range(0, k):
         se_open = np.logical_or(se_open,
@@ -49,6 +53,8 @@ def run(dataset):
         se_open = np.logical_or(se_open,
                                     np.eye(l, dtype=np.uint8, k=r - 1))
     se_open = np.transpose(se_open.astype(np.uint8))
+
+    se_open = (5,5)
 
     rho = 0.15
 
@@ -59,7 +65,7 @@ def run(dataset):
     # test, gt = cdnet.read_sequence('week4', dataset, 'test',
     #                                colorspace='gray', annotated=True)
 
-    seq = workshop.read_sequence(dataset, colorspace='gray')
+    seq = workshop.read_sequence(dataset, colorspace='rgb', homography=H)
 
     train = seq[:marker]
     test = seq[marker:]
@@ -75,7 +81,14 @@ def run(dataset):
     # train_stab = train_stab[...,np.newaxis]
 
     # Adaptive model prediction
-    #train, stab_masks = optical_flow.stabilize(train, mode='f')
+    train = train.astype(np.uint8)
+    test = test.astype(np.uint8)
+    animations.video_recorder(train, '', f"{dataset}_train_unstab")
+    animations.video_recorder(test, '', f"{dataset}_test_unstab")
+    train, __ = optical_flow.stabilize(train, mode='f')
+    test, __ = optical_flow.stabilize(test, mode='f')
+    animations.video_recorder(train, '', f"{dataset}_train_stab")
+    animations.video_recorder(test, '', f"{dataset}_test_stab")
     model = bg_subtraction.create_model(train)
     # model_stab = bg_subtraction.create_model_mask(train_stab,
     #                                               train_mask[1,:])
@@ -92,8 +105,7 @@ def run(dataset):
     # clean_stab = morphology.filter_small(filled8_stab, bsize, neighb=4)
 
     # CLOSING
-    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                        se_close)
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
     #clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
     #                                st_elem)
     # clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE,
@@ -101,7 +113,7 @@ def run(dataset):
 
     # OPENING
 
-    st_elem = se_open
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_open)
 
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN,
                                     st_elem)
@@ -125,8 +137,10 @@ def run(dataset):
               (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
     tracker_out = []
 
+    animations.video_recorder(pred, '', f"{dataset}_orig")
+
     for idx in range(1, morph.shape[0]):
-        try:
+        if True:
             # Read a new frame
             frame = morph[idx]
             out_im = test[idx]
@@ -142,10 +156,10 @@ def run(dataset):
             # Draw bounding box
             for i, cbb in enumerate(res_bboxes):
                 # Tracking success
-                p1 = (int(cbb['location'][0] - cbb['size'][0]),
-                      int(cbb['location'][1] - cbb['size'][1]))
-                p2 = (int(cbb['location'][0] + cbb['size'][0]),
-                      int(cbb['location'][1] + cbb['size'][1]))
+                p1 = (int(cbb['location'][0] - cbb['height']),
+                      int(cbb['location'][1] - cbb['width']))
+                p2 = (int(cbb['location'][0] + cbb['height']),
+                      int(cbb['location'][1] + cbb['width']))
                 cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
 
             # Append result
@@ -155,8 +169,10 @@ def run(dataset):
             k = cv2.waitKey(50) & 0xff
             if k == 27: break
 
-        except Exception as e:
-            print(e)
+        #except Exception as e:
+        else:
+            pass
+            # print(e)
 
     tracker_out = np.array(tracker_out)
 

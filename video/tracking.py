@@ -50,6 +50,7 @@ class KalmanTracker:
         # Centroid assignment through Hungarian algorithm
         blob_centroids = centroids(bboxes)
         kalman_centroids = np.array([kf['centroid'] for kf in self.filters])
+
         if kalman_centroids.size and blob_centroids.size:
             dist = euclidean_distance(kalman_centroids, blob_centroids)
             match_i, match_j = opt.linear_sum_assignment(dist)
