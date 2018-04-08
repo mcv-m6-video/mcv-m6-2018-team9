@@ -43,16 +43,12 @@ def DLT(coords = [], dataset = None):
     #not implemented    
     elif dataset == 'traffic':
         
-        #narrow
-        p_11 = p((127.304,83.221))
-        p_12 = p((261.282, 98.1241))
+    matrix = np.array([[ 1.        ,  0.        ,  0.        ],
+                   [ 0.        ,  1.        ,  0.        ],
+                   [ 0.        ,  0.00484753,  1.        ]])
+    invm = np.linalg.inv(matrix)
+    return invm
 
-        #bigger
-        p_11 = p((197.512, 19.221))
-        p_12 = p((269.282, 22.1241))
-        p_13 = p((24.225, 174.857))
-        p_14 = p((255.404, 194.516))
-        
     else:
         print("couldn't definie coordinates!")
         return
