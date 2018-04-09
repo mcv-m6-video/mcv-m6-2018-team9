@@ -2,36 +2,53 @@ import numpy as np
 import cv2
 from data import cdnet
 from evaluation import metrics, animations
-from video import bg_subtraction, morphology, video_stabilization, tracking
+from video import (bg_subtraction, morphology, video_stabilization, tracking,
+                   optical_flow, Homography)
 import matplotlib.pyplot as plt
 import time
 
 
-compareOutput = 0
-maxWidth = 320
-out_path = '.'
-
-
 def run(dataset):
+    """Use kalman filter to generate a video sequence
+    Args:
+      dataset: (str) 'highway' or 'traffic'
+    """
     # Dataset-specific parameters
     if dataset == 'highway':
-        rho = 0.20
-        alpha = 2.8
+        # background subtraction model
+        rho = 0.10
+        alpha = 3
+
+        # block matching stablization
+        stabilization = False
+
+        # morphology
         bsize = 50
         se_close = (15, 15)
         se_open = (4, 17)
         shadow_t1 = 0.082
         shadow_t2 = 0.017
 
+        # kalman tracker
+        min_matches = 15
+        stabilize_prediction = 5
+        disappear_thr = 3
+
     elif dataset == 'traffic':
-        rho = 0.15
-        alpha = 2.25
+        # background subtraction model
+        rho = 0.10
+        alpha = 3
+
+        # block matching stablization
+        stabilization = True
+
+        # morphology
         bsize = 400
         se_close = (15, 15)
         k = 9
         l = 30
-
         se_open = np.eye(l, dtype=np.uint8)
+
         for r in range(0, k):
             se_open = np.logical_or(se_open,
                                     np.eye(l, dtype=np.uint8, k=r + 1))
@@ -39,41 +56,38 @@ def run(dataset):
                                     np.eye(l, dtype=np.uint8, k=r - 1))
         se_open = np.transpose(se_open.astype(np.uint8))
 
+        # kalman tracker
+        min_matches = 10
+        stabilize_prediction = 5
+        disappear_thr = 3
+
     # Read dataset
-    train, gt_t = cdnet.read_sequence('week4', dataset, 'train',
-                                      colorspace='gray',annotated=True)
-    test, gt = cdnet.read_sequence('week4', dataset, 'test', colorspace='gray',
-                                   annotated=True)
+    train, gt_train = cdnet.read_sequence('week5', dataset, 'train',
+                                          colorspace='gray',annotated=True)
+    test, gt_test = cdnet.read_sequence('week5', dataset, 'test',
+                                        colorspace='gray', annotated=True)
 
-    # Stabilize sequences
-    # TODO: check from previous weeks if video stabilization needs color images
-    train_stab, train_mask = video_stabilization.ngiaho_stabilization(train,
-                                    gt_t, out_path, compareOutput, maxWidth)
-    test_stab, test_mask = video_stabilization.ngiaho_stabilization(test,gt,
-                                    out_path, compareOutput, maxWidth)
+    if stabilization:
+        # Stabilize sequences
+        train, train_mask = optical_flow.stabilize(train, mode='forward')
+        test, test_mask = optical_flow.stabilize(test, mode='forward')
 
-    # Add axis
-    test_stab = test_stab[...,np.newaxis]
-    train_stab = train_stab[...,np.newaxis]
-
-    # Adaptive model prediction
-    model = bg_subtraction.create_model(train)
-    model_stab = bg_subtraction.create_model_mask(train_stab, train_mask[1,:])
-
-    pred = bg_subtraction.predict(test, model, alpha, rho=rho)
-    pred_stab = bg_subtraction.predict_masked(test_stab, test_mask[1],
-                                              model_stab, alpha, rho=rho)
+        # Adaptive model prediction
+        model = bg_subtraction.create_model_mask(train, train_mask)
+        pred = bg_subtraction.predict_masked(test, test_mask, model, alpha,
+                                             rho=rho)
+    else:
+        # Adaptive model prediction
+        model = bg_subtraction.create_model(train)
+        pred = bg_subtraction.predict(test, model, alpha, rho=rho)
 
     # Imfill + filter small blobs
     filled8 = morphology.imfill(pred, neighb=8)
-    filled8_stab = morphology.imfill(pred_stab, neighb=8)
     clean = morphology.filter_small(filled8, bsize, neighb=4)
-    clean_stab = morphology.filter_small(filled8_stab, bsize, neighb=4)
 
     # Closing
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
     clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE, st_elem)
-    clean_stab = morphology.filter_morph(clean_stab, cv2.MORPH_CLOSE, st_elem)
 
     # Opening
     if (dataset == 'traffic'):
@@ -82,107 +96,84 @@ def run(dataset):
         st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_open)
 
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN, st_elem)
-    morph_stab = morphology.filter_morph(clean_stab, cv2.MORPH_OPEN, st_elem)
 
-    # TRACKING
-    # Setup SimpleBlobDetector parameters.
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByColor = True
-    params.blobColor = 255
-    params.filterByArea = False
-    #params.minArea = 10000
-
-    detector = cv2.SimpleBlobDetector_create(params)
-    morph = (morph*255).astype('uint8')
-    #added
-    morph_stab = (morph_stab*255).astype('uint8')
-    
+    # Tracking
     # Initialize tracker with first frame and bounding box
-    trk = tracking.Tracker(3, max_distance=200)
-    colors = [(255, 0, 0), (255, 255, 0), (255, 255, 255), (255, 0, 255),
-              (0, 0, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255)]
-    tracker_out = []
+    morph = (morph * 255).astype('uint8')
+    kalman = tracking.KalmanTracker(disappear_thr=disappear_thr,
+                                    min_matches=min_matches,
+                                    stabilize_prediction=stabilize_prediction)
+    tracker_raw = []
+    tracker_bin = []
 
+    frame_no = 0
+    
     #np.array(2) -> last
     speed = {}
     meter_pix = 9./123.55 
     fps = 12
-    
-    #affine rect for traffic
-    matrix = np.array([[ 1.        ,  0.        ,  0.        ],
-                   [ 0.        ,  1.        ,  0.        ],
-                   [ 0.        ,  0.00484753,  1.        ]])
-    invm = np.linalg.inv(matrix)
-    print(test.shape, " ", test_stab.shape)
-    print(morph.shape, " ", morph_stab.shape)
-    
-    test = test_stab
-    morph = morph_stab
-    list_detected_centers = []
-    for idx in range(1, morph.shape[0]):
-        try:
-            # Read a new frame
-            frame = morph[idx]
-            out_im = test[idx]
+    invm = np.linalg.inv(Homography.DLT(dataset=dataset))
+    number_frames = 0
+    for im_bin, im_raw in zip(morph, test):
+        bboxes = tracking.find_bboxes(im_bin)
+        kalman_pred = kalman.estimate(bboxes)
+        
+        
+        
+        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred)
+        out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
+                                                    kalman_pred)
 
-            # Start timer
-            timer = cv2.getTickCount()
-            blob = detector.detect(frame)
-            bboxes = np.array([(bb.pt[0], bb.pt[1], bb.pt[0] + bb.size / 2,
-                                bb.pt[1] + bb.size / 2) for bb in blob])
 
-            res_bboxes = trk.estimate(bboxes)
-
-            
-            
-            # Draw bounding box
-            for i, cbb in enumerate(res_bboxes):
-                # Tracking success
-                p1 = (int(cbb['location'][0] - cbb['size'][0]),
-                      int(cbb['location'][1] - cbb['size'][1]))
-                p2 = (int(cbb['location'][0] + cbb['size'][0]),
-                      int(cbb['location'][1] + cbb['size'][1]))
-                cv2.rectangle(out_im, p1, p2, colors[cbb['id'] % 8], 2, 1)
-                print(cbb)
+        print ("kalmanpred: ", len(kalman_pred))
+        number_frames+=1
+        for kfilt in kalman_pred:
+            # speed estimator
+            try:
+                #dist = np.linalg.norm(speed[str(cbb['id'])] - cbb['location'])
                 
-                # speed estimator
-                try:
-                    #dist = np.linalg.norm(speed[str(cbb['id'])] - cbb['location'])
-                    proj_pos = invm * np.append(cbb['location'],np.ones(1)) 
-                    
-                    dist = np.linalg.norm(speed[str(cbb['id'])] - proj_pos)
-                    print("for id: " , str(cbb['id']) ,": ", dist)
-                    speed[str(cbb['id'])] = proj_pos
-                    print (" v: ",  dist*meter_pix*fps*3.6)
-                    list_detected_centers.append(cbb['location'])
-                    cv2.putText(out_im, str(dist*meter_pix*fps*3.6), p2, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
-                    #cv2.circle(out_im, cbb['location'], 63, (0,0,255), -1)
-                    
-                except KeyError:
-                    #create dict for id and add last position
-                    # speed[str(cbb['id'])] = cbb['location']
-                    corrected = invm * np.append(cbb['location'],np.ones(1)) 
-                    speed[str(cbb['id'])] = corrected
-            
-            
-            for center in list_detected_centers:
+                print(kfilt['motion'])
+                trans_motion = np.dot(invm , np.append(kfilt['motion'],np.zeros(1)) )
+                dist = np.linalg.norm(trans_motion)
+                
+                print("for id: " , str(kfilt['id']) ,": ", dist)
+                #speed[str(kalman_pred['id'])] = proj_pos
+                sp= dist*meter_pix*fps*3.6
+                print (" v: ",  sp)
+                speed[str(kfilt['id'])].append(sp)
+                #list_detected_centers.append(cbb['location'])
+                #centrooid = np.dot(invm,np.append(kfilt['centroid'],np.ones(1)) )
+                #print(centrooid)
+                #centrooid/=centrooid[2]
+                
+                cv2.putText(out_raw, str(sp), (kfilt['centroid'][0],kfilt['centroid'][1])
+                           , cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
+                #cv2.putText(out_raw, str(dist*meter_pix*fps*3.6), (centrooid.astype(int)[0],centrooid.astype(int)[1])
+                #            , cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
+                #cv2.circle(out_im, cbb['location'], 63, (0,0,255), -1)
 
-                cv2.circle(out_im, (center[0], center[1]), 6, (0,0,255))
-            
-            # Append result
-            tracker_out.append(out_im)
-
-            # Exit if ESC pressed
-            k = cv2.waitKey(50) & 0xff
-            if k == 27: break
-
-        except Exception as e:
-            print(e)
-
-    tracker_out = np.array(tracker_out)
+            except KeyError:
+                speed[str(kfilt['id'])] = number_frames*[0]
+                #create dict for id and add last position
+                # speed[str(cbb['id'])] = cbb['location']
+                #corrected = invm * np.append(cbb['location'],np.ones(1)) 
+                #speed[str(cbb['id'])] = corrected
+        
+        # Append result
+        tracker_raw.append(out_raw)
+        tracker_bin.append(out_bin)
+        
+        
+        # Some debug information
+        frame_no += 1
+        print('---------{:03d}---------'.format(frame_no))
+        print(bboxes)
+        for det in kalman_pred:
+            print('>>', det)
 
     # Save individual gifs and an extra gif which compare them
-    animations.video_recorder(pred, '', "_orig")
-    animations.video_recorder(morph, '', "_morph")
-    animations.video_recorder(test_mask[1,:], '', "_valid")
-    animations.video_recorder(tracker_out, '', "_track")
+    animations.video_recorder_v2(pred, "_bg.gif")
+    animations.video_recorder_v2(morph, "_morph.gif")
+    animations.video_recorder_v2(tracker_raw, "_track_raw.gif")
+    animations.video_recorder_v2(tracker_bin, "_track_bin.gif")
+
