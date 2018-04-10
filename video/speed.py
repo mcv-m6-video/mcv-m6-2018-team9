@@ -1,10 +1,8 @@
 import numpy as np
 import cv2
 
-    
-def speed(sp={}, filters = None, meter_pix=9.14/70.55 , fps=25, matrix = np.eye(3), out_image = None, n_frames = 0):
-
-def speedv3(sp={}, filters = None, meter_pix = 27.43/42.55  , fps=12, matrix = np.eye(3), out_image = None, 
+   
+def speed(sp={}, filters = None, meter_pix = 27.43/42.55  , fps=12, matrix = np.eye(3), out_image = None, 
             n_frames = 0, skip_frames = 5):
 
     """
