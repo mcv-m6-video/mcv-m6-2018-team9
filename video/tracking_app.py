@@ -121,7 +121,7 @@ class TrackingApplication:
             h = int(detection['size'][1])
             x = int(detection['centroid'][0] - w / 2)
             y = int(detection['centroid'][1] - h / 2)
-            text = '{} {}'.format(detection['id'], detection.get('text', ''))
+            text = '{} {}'.format(detection['label'], detection.get('text', ''))
             color = (255, 153, 0)
             cv2.rectangle(im, (x,y), (x+w, y+h), color, 1)
             cv2.putText(im, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,

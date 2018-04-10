@@ -28,6 +28,7 @@ class KalmanTracker:
         self.min_matches = min_matches
         self.disappear_thr = disappear_thr
         self.obj_counter = 0
+        self.label_counter = 0
         self.stabilize_prediction = stabilize_prediction
         self.max_distance = max_distance  # max distance traversed by an object
                                           # between frames
@@ -134,8 +135,10 @@ class KalmanTracker:
                 if not point_inside(f['centroid'], self.detection_area):
                     f['visible'] = False
 
-        # for f in self.filters:
-        #     print("++", f)
+        # Assign labels to new visible filters
+        for f in self.filters:
+            if f['visible'] and f['label'] == 0:
+                f['label'] = self._next_label()
 
         visible_list = list(filter(lambda f: f['visible'], self.filters))
         return visible_list
@@ -150,6 +153,7 @@ class KalmanTracker:
                                             [0, 0, 1, 0],
                                             [0, 0, 0, 1]], np.float32)
         filter_object = dict(id=self.obj_counter,
+                             label=0,  # Updated when object becomes visible
                              kalman=kalman,
                              centroid=np.zeros((1, 2), dtype='float32'),
                              size=np.zeros((1, 2), dtype='float32'), # width, height
@@ -158,6 +162,10 @@ class KalmanTracker:
                              disapp_count=0,
                              visible=False)
         return filter_object
+
+    def _next_label(self):
+        self.label_counter += 1
+        return self.label_counter
 
 
 ############################################
@@ -277,7 +285,7 @@ def draw_tracking_prediction(im, pred, color=(255, 153, 0), roi=None,
         h = int(detection['size'][1])
         x = int(detection['centroid'][0] - w / 2)
         y = int(detection['centroid'][1] - h / 2)
-        text = '{} {}'.format(detection['id'], detection.get('text', ''))
+        text = '{} {}'.format(detection['label'], detection.get('text', ''))
         cv2.rectangle(im2, (x,y), (x+w, y+h), color, 1)
         cv2.putText(im2, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1,
                     cv2.LINE_AA)
