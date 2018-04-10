@@ -3,7 +3,7 @@ import cv2
 from data import cdnet
 from evaluation import metrics, animations
 from video import (bg_subtraction, morphology, video_stabilization, tracking,
-                   optical_flow, Homography)
+                   optical_flow, Homography, speed)
 import matplotlib.pyplot as plt
 import time
 
@@ -108,57 +108,22 @@ def run(dataset):
 
     frame_no = 0
     
-    #np.array(2) -> last
-    speed = {}
-    meter_pix = 9./123.55 
+    sped = {}
+    meter_pix = 9./12.55 
     fps = 12
     invm = np.linalg.inv(Homography.DLT(dataset=dataset))
     number_frames = 0
     for im_bin, im_raw in zip(morph, test):
+      
         bboxes = tracking.find_bboxes(im_bin)
         kalman_pred = kalman.estimate(bboxes)
-        
-        
-        
+   
         out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred)
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred)
-
-
-        print ("kalmanpred: ", len(kalman_pred))
         number_frames+=1
-        for kfilt in kalman_pred:
-            # speed estimator
-            try:
-                #dist = np.linalg.norm(speed[str(cbb['id'])] - cbb['location'])
-                
-                print(kfilt['motion'])
-                trans_motion = np.dot(invm , np.append(kfilt['motion'],np.zeros(1)) )
-                dist = np.linalg.norm(trans_motion)
-                
-                print("for id: " , str(kfilt['id']) ,": ", dist)
-                #speed[str(kalman_pred['id'])] = proj_pos
-                sp= dist*meter_pix*fps*3.6
-                print (" v: ",  sp)
-                speed[str(kfilt['id'])].append(sp)
-                #list_detected_centers.append(cbb['location'])
-                #centrooid = np.dot(invm,np.append(kfilt['centroid'],np.ones(1)) )
-                #print(centrooid)
-                #centrooid/=centrooid[2]
-                
-                cv2.putText(out_raw, str(sp), (kfilt['centroid'][0],kfilt['centroid'][1])
-                           , cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
-                #cv2.putText(out_raw, str(dist*meter_pix*fps*3.6), (centrooid.astype(int)[0],centrooid.astype(int)[1])
-                #            , cv2.FONT_HERSHEY_SIMPLEX, 0.9, 255)
-                #cv2.circle(out_im, cbb['location'], 63, (0,0,255), -1)
+        out_raw = speedv2(sped, filters = kalman_pred, out_image= out_raw, matrix=invm)
 
-            except KeyError:
-                speed[str(kfilt['id'])] = number_frames*[0]
-                #create dict for id and add last position
-                # speed[str(cbb['id'])] = cbb['location']
-                #corrected = invm * np.append(cbb['location'],np.ones(1)) 
-                #speed[str(cbb['id'])] = corrected
-        
         # Append result
         tracker_raw.append(out_raw)
         tracker_bin.append(out_bin)
@@ -176,4 +141,19 @@ def run(dataset):
     animations.video_recorder_v2(morph, "_morph.gif")
     animations.video_recorder_v2(tracker_raw, "_track_raw.gif")
     animations.video_recorder_v2(tracker_bin, "_track_bin.gif")
+    
+    #clean outliers
+    cleaned_dic = {}
+    for key in sp.keys():
+        if(key[0]=='s'):
+            values = np.array(sp[key])
+            values = values[abs(values - np.mean(values)) < 1.2 * np.std(values)]
+            cleaned_dic[key] = values
+            plt.plot(cleaned_dic[key], label=key)
+            print(key, ": mean ", np.mean(values), " median: " , np.median(values))
+    plt.legend()
+    plt.ylabel('speed')
+    plt.xlabel('frame')
+    plt.show()
+    return
 
