@@ -122,7 +122,7 @@ def run(dataset):
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred)
         number_frames+=1
-        out_raw = speedv2(sped, filters = kalman_pred, out_image= out_raw, matrix=invm)
+        out_raw = speed.speed(sped, filters = kalman_pred, out_image= out_raw, matrix=invm)
 
         # Append result
         tracker_raw.append(out_raw)
