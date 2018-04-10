@@ -3,33 +3,50 @@ import cv2
 
 from data import workshop
 from evaluation import animations
-from video import (bg_subtraction, morphology, video_stabilization, tracking,
+from video import (bg_subtraction, morphology, tracking,
                    optical_flow, Homography, shadow_detection)
 
 
 def run(dataset):
 
     if dataset == 'sequence1':
-        marker = 150
+        marker = 140
     elif dataset == 'sequence2':
-        marker = 80
+        # Area for perspective correction and speed estimation
+        detection_area = [(125, 45), (165, 45), (85, 165), (220, 165)]
+        marker = 160
+
+        #Shadow Detection
+        th1 = 0.0002
+        th2 = 0.017
+
     elif dataset == 'sequence3':
+        # Area for perspective correction and speed estimation
+        detection_area = [(130, 30), (165, 30), (85, 160),(222, 160)]
         marker = 100
+
+        #Shadow Detection
+        th1 = 0.00015
+        th2 = 0.017
+
     else:
         raise Exception('Wrong dataset')
 
     # Background subtraction model
     rho = 0.15
     alpha = 4
+    bsize = 100
 
     # Morphology parameters
-    bsize = 100
     se_close = (5, 5)
-    se_open = (4, 6)
-    se_dil = (20, 20)
+    se_open = (14, 14)
+    se_dil = (4, 4)
+    se_dil2 = (7, 7)
 
-    # Area for perspective correction and speed estimation
-    detection_area = [(130, 23), (160, 23), (85, 160), (225, 160)]
+    #Kalman Parameters
+    disappear_thr = 4
+    min_matches = 4
+    stabilize_prediction = 5
 
     # Read dataset
     seq = workshop.read_sequence(dataset, colorspace='gray')
@@ -51,45 +68,57 @@ def run(dataset):
     model = bg_subtraction.create_model_mask(train, train_mask)
     pred = bg_subtraction.predict_masked(test, test_mask, model, alpha,
                                          rho=rho)
-    shad = shadow_detection.shadow_batch(test_rgb, 0.0003, 0.0015)
+    shad = shadow_detection.shadow_batch(test_rgb, th1, th2)
     pred = np.logical_and(pred, shad)
 
     # Morphology and filtering
-    filled8 = morphology.imfill(pred, neighb=8)
+
+    # DILATION
+    st_elem = cv2.getStructuringElement(cv2.MORPH_RECT, se_dil)
+    dil1 = morphology.filter_morph(pred, cv2.MORPH_DILATE, st_elem)
+
+    #FILLING & AREA FILTERING
+    filled8 = morphology.imfill(dil1, neighb=8)
     clean = morphology.filter_small(filled8, bsize, neighb=4)
 
     # CLOSING
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_close)
-    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,
-                                   st_elem)
+    clean = morphology.filter_morph(clean, cv2.MORPH_CLOSE,st_elem)
 
     # OPENING
     st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_open)
     morph = morphology.filter_morph(clean, cv2.MORPH_OPEN, st_elem)
 
     # DILATION
-    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_dil)
+    st_elem = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, se_dil2)
     morph = morphology.filter_morph(morph, cv2.MORPH_DILATE, st_elem)
 
 
     # Kalman tracker
-    disappear_thr = 3
-    min_matches = 3
-    stabilize_prediction = 5
+    roi = [detection_area[0], detection_area[1], detection_area[3],
+           detection_area[2]]
+
     morph = (morph*255).astype('uint8')
     kalman = tracking.KalmanTracker(disappear_thr=disappear_thr,
                                     min_matches=min_matches,
                                     stabilize_prediction=stabilize_prediction,
-                                    detection_area=detection_area)
+                                    detection_area=roi)
     tracker_raw = []
     tracker_bin = []
     frame_no = 0
-    roi = [detection_area[0], detection_area[1], detection_area[3],
-           detection_area[2]]
+
 
     for im_bin, im_raw in zip(morph, test):
+
         bboxes = tracking.find_bboxes(im_bin)
-        kalman_pred = kalman.estimate(bboxes)
+
+        filt_boxes = []
+        for (x, y, w, h) in bboxes:
+            if ((w < 40) & (h < 40)):
+                bb = [x, y, w, h]
+                filt_boxes.append(bb)
+        kalman_pred = kalman.estimate(filt_boxes)
+
         out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred,
                                                     roi=roi)
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
