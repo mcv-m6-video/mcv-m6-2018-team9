@@ -4,7 +4,8 @@ import cv2
 from data import workshop
 from evaluation import animations
 from video import (bg_subtraction, morphology, video_stabilization, tracking,
-                   optical_flow, Homography, shadow_detection, tracking_app)
+                   optical_flow, Homography, shadow_detection, tracking_app,
+                   speed)
 
 
 def run(dataset):
@@ -94,7 +95,6 @@ def run(dataset):
     morph = morphology.filter_morph(morph, cv2.MORPH_DILATE, st_elem)
 
     # Kalman tracker
-
     roi = [detection_area[0], detection_area[1], detection_area[3],
            detection_area[2]]
     morph = (morph*255).astype('uint8')
@@ -103,9 +103,15 @@ def run(dataset):
                                     stabilize_prediction=stabilize_prediction,
                                     detection_area=roi)
 
+    # TrackingApplication
     frame_size = [180, 320]
     fps = (30 / 6)
     app = tracking_app.TrackingApplication(frame_size, fps, roi)
+
+    # Homography for speed stimation
+    speed_pred = {}
+    meter_pix = 1 / 30  # meters/pix ratio
+    invm = np.linalg.inv(Homography.DLT(coords=detection_area))
 
     tracker_raw = []
     tracker_bin = []
@@ -125,11 +131,14 @@ def run(dataset):
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred, roi=roi)
 
+        speed.speed(sp=speed_pred, filters=kalman_pred, matrix=invm,
+                    meter_pix=meter_pix)
+
         # Append result
         tracker_raw.append(out_raw)
         tracker_bin.append(out_bin)
 
-        app_image = app.process_input(im_raw, kalman_pred)
+        app_image = app.process_input(im_raw, kalman_pred, speed_pred)
         app_video.append(app_image)
 
         print('-----------{:03d}---------'.format(app.total_frames))

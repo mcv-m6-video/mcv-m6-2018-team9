@@ -63,7 +63,7 @@ class TrackingApplication:
         self._canvas_frame = self._canvas[:, :frame_width]
         self._canvas_board = self._canvas[:, frame_width:]
 
-    def process_input(self, frame_im, tracker_detections):
+    def process_input(self, frame_im, tracker_detections, speed_pred={}):
         """Process a new input to generate the application output
 
         For each new frame, the application expect the corresponding image and
@@ -83,7 +83,7 @@ class TrackingApplication:
         """
         tracker_detections = self._filter_visible_tracks(tracker_detections)
         self._update_metrics(tracker_detections)
-        self._update_canvas_frame(frame_im, tracker_detections)
+        self._update_canvas_frame(frame_im, tracker_detections, speed_pred)
         self._update_canvas_board()
         return self._canvas.copy()
 
@@ -106,7 +106,7 @@ class TrackingApplication:
         self.current_vehicles = len(tracker_detections)
         self.total_frames += 1
 
-    def _update_canvas_frame(self, frame, tracker_detections):
+    def _update_canvas_frame(self, frame, tracker_detections, speed_pred):
         """Update to last frame with bounding box and labels for current vehicles"""
         if frame.shape[2] == 1:
             im = np.repeat(frame, 3, axis=2)
@@ -117,13 +117,24 @@ class TrackingApplication:
         im = cv2.polylines(im, roi, True, (240, 30, 0), 1, cv2.LINE_AA)
 
         for detection in tracker_detections:
+            color = (255, 153, 0)
             w = int(detection['size'][0])
             h = int(detection['size'][1])
             x = int(detection['centroid'][0] - w / 2)
             y = int(detection['centroid'][1] - h / 2)
-            text = '{} {}'.format(detection['label'], detection.get('text', ''))
-            color = (255, 153, 0)
             cv2.rectangle(im, (x,y), (x+w, y+h), color, 1)
+
+            if speed_pred:
+                speed_list = speed_pred['speed{}'.format(detection['id'])]
+            else:
+                speed_list = []
+
+            if speed_list:
+                speed = np.mean(speed_list)
+                text = '{}  {:.0f} km/h'.format(detection['label'], speed)
+            else:
+                text = '{}'.format(detection['label'])
+
             cv2.putText(im, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,
                         1, cv2.LINE_AA)
 
