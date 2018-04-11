@@ -128,8 +128,8 @@ def run(dataset):
     tracker_out = np.array(tracker_out)
 
     # Save individual gifs and an extra gif which compare them
-    animations.video_recorder(pred, '', f"{dataset}_orig")
-    animations.video_recorder(morph, '', f"{dataset}_morph")
-    animations.video_recorder(morph_stab, '', f"{dataset}_morph_stab")
-    animations.video_recorder(gt[1,:], '', f"{dataset}_valid")
-    animations.video_recorder(tracker_out, '', f"{dataset}_track", 'mp4V','mp4')
+    animations.video_recorder(pred, '', f"{dataset}_meanshift_orig")
+    animations.video_recorder(morph, '', f"{dataset}_meanshift_morph")
+    animations.video_recorder(morph_stab, '', f"{dataset}_meanshift_morph_stab")
+    animations.video_recorder(gt[1,:], '', f"{dataset}_meanshift_valid")
+    animations.video_recorder(tracker_out, '', f"{dataset}_meanshift_track", 'mp4V','mp4')
