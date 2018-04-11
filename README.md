@@ -42,6 +42,7 @@ evaluate the performance of our system:
 
 - [ChangeDetection.NET (CDNET)](http://changedetection.net/)
 - [KITTI dataset for Optical Flow 2012](http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php?benchmark=flow)
+- [C-17 highway sequences for the 5th Workshop on Road Traffic Monitoring](https://drive.google.com/open?id=1ByWklwjsNoko40NptaSBvt5L5gOrFwt4)
 
 You may need to copy the datasets in the `datasets/` folder to run some
 of the weekly tasks. When needed, it will be reported in the weekly
@@ -145,6 +146,12 @@ repository and execute: `python run.py week4 -t N`, where `N` can be:
 * 2 to execute tasks 2.1 and 2.2, related to video compensation.
 
 ### Week 5 Code
+
+Prerequisites:
+
+* Download the [C-17 highway sequences for the 5th Workshop on Road Traffic Monitoring](https://drive.google.com/open?id=1ByWklwjsNoko40NptaSBvt5L5gOrFwt4) and unzip into
+  the `datasets/` folder. It contains two video sequences
+  inside a `workshop` folder.
 
 To run the tasks of this week, `cd` to the root folder of the
 repository and execute:
