@@ -52,6 +52,7 @@ def main():
         elif args.task == 5:
             week3.task5.run(args.dataset)
 
+    # Week 4
     elif args.week == 'week4':
         if args.task == 1:
             week4.task1_gridsearch.run()
@@ -60,6 +61,16 @@ def main():
         if args.task == 2:
             week4.task2_1.run()
             week4.task2_ngiaho.run('traffic')
+
+    # Week 5
+    elif args.week == 'week5':
+        if args.task == 1:
+            week5.task1_tracking.run(args.dataset)
+            week5.task1_meanshift.run(args.dataset)
+        elif args.task == 2:
+            week5.task1_debug_speed.run(args.dataset)
+        elif args.task == 3:
+            week5.task3_tracking_app.run(args.dataset)
 
 
 if __name__ == '__main__':

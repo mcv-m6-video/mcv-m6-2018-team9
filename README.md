@@ -19,8 +19,13 @@ We have developed and test our code with:
 - numpy 1.14.1
 - matplotlib 2.1.2
 - scikit-learn 0.19.1
-- opencv-python 3.4.0.12
+- opencv-contrib-python 3.4.0.12
 - pillow 5.0.0
+- imageio 2.2.0
+- scikit_image 0.13.1
+- imutils 0.4.6
+- pandas 0.22.0
+- scipy 1.0.0
 
 A `requirements.txt` with the above python dependencies can be found
 in the root folder of the repository. You may want to install them by
@@ -56,8 +61,8 @@ results:
 - Week 2: [Background estimation and Stauffer & Grimson's approach](https://docs.google.com/presentation/d/1aI1owlfyb7za4ij8lUc4j1mNEmD4aXV679oRF2lDiBk/edit#slide=id.p)
 - Week 3: [Foreground segmentation, filtering and shadow removal](https://docs.google.com/presentation/d/1bLqRug-OUk6e5cf1uCqNKUt3DlqElFyYameDbwt_n-A/edit?usp=sharing)
 - Week 4: [Optical flow and video stabilization](https://docs.google.com/presentation/d/1MSC-2cTM0PF6hQIKMk92vDQJizMgdOAmFFFq6BjObpU/edit#slide=id.p).
-- Week 5: Region tracking and Kalman filter.
-- Week 6: Pipeline assembly and performance evaluation.
+- Week 5: Region tracking and Kalman filter, included in our
+  [Final presentation for the 5th Workshop on Road Traffic Monitoring](https://docs.google.com/presentation/d/1XTjxj2qV_XuitkfQL0ZdJQsu-eehlLoTKeotdI-agRs/edit?usp=sharing)
 
 ### Week 1 Code
 
@@ -139,6 +144,23 @@ repository and execute: `python run.py week4 -t N`, where `N` can be:
 * 1 to execute tasks 1.1 and 1.2, related to optical flow estimation.
 * 2 to execute tasks 2.1 and 2.2, related to video compensation.
 
+### Week 5 Code
+
+To run the tasks of this week, `cd` to the root folder of the
+repository and execute:
+
+* `python run.py week5 -t 1 -d dataset`: run Kalman and Meanshift
+  tracking over `dataset` (either 'highway' or 'traffic'). The script
+  generates the corresponding video sequences in the project root
+  directory.
+* `python run.py week5 -t 2 -d dataset`: run the speed estimator on
+  `dataset` (either 'highway' or 'traffic') and generates the video
+  sequences.
+* `python run.py week5 -t 3 -d dataset`: run our application demo for
+  the _5th Workshop on Road Traffic Monitoring_. Posible values for
+  `dataset` are 'sequence2' and 'sequence3'. It generates a video with
+  tracking, speed estimation and vehicle statistics in the [C-17
+  highway](https://www.google.es/maps/place/41%C2%B032'39.9%22N+2%C2%B013'26.6%22E/@41.544427,2.2218703,17z/data=!3m1!4b1!4m5!3m4!1s0x0:0x0!8m2!3d41.544427!4d2.224059).
 
 ## Authors
 
