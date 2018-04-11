@@ -46,8 +46,8 @@ def DLT(coords = [], dataset = None):
         matrix = np.array([[  6.32412016e-01,   7.88794633e-01,  -5.00730702e+01],
        [ -3.87169463e-02,   9.04152168e-01,   1.98813334e-11],
        [  1.70844950e-04,  -4.44377163e-03,   1.00146140e+00]])
-        invm = np.linalg.inv(matrix)
-        return invm
+        
+        return matrix
 
     else:
         print("couldn't definie coordinates!")
