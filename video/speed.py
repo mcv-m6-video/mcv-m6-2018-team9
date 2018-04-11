@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-
+import matplotlib.pyplot as plt
     
 def speed(sp={}, filters = None, meter_pix = 12.19/20.55  , fps=30, matrix = np.eye(3), out_image = None, 
             n_frames = 0, skip_frames = 5):
@@ -65,4 +65,24 @@ def speed(sp={}, filters = None, meter_pix = 12.19/20.55  , fps=30, matrix = np.
         return out_image
     else:
         return
-        
+
+def plot_speed(speed_dict):
+    '''
+    Plots the stored speed values in the corresponding dict.
+    Params:
+        speed_dict: Dictionary generated from the result of tracking 
+                    and estimating speed via speed function    
+    '''
+    for key in sp.keys():
+        if(key[0]=='s'):
+            
+            values = np.array(sp[key])
+            values = values[abs(values - np.mean(values)) < 1.2 * np.std(values)]
+            plt.plot(np.array(values), label=key)
+            print(key, ": mean ", np.mean(values), " median: " , np.median(values))
+
+    plt.legend()
+    plt.title('Speed Estimation')
+    plt.ylabel('speed')
+    plt.xlabel('frame')
+    plt.show()  
