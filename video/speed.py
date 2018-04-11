@@ -73,10 +73,10 @@ def plot_speed(speed_dict):
         speed_dict: Dictionary generated from the result of tracking 
                     and estimating speed via speed function    
     '''
-    for key in sp.keys():
+    for key in speed_dict.keys():
         if(key[0]=='s'):
             
-            values = np.array(sp[key])
+            values = np.array(speed_dict[key])
             values = values[abs(values - np.mean(values)) < 1.2 * np.std(values)]
             plt.plot(np.array(values), label=key)
             print(key, ": mean ", np.mean(values), " median: " , np.median(values))
