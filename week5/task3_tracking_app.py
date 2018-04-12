@@ -129,7 +129,7 @@ def run(dataset):
                 bb = [x, y, w, h]
                 filt_boxes.append(bb)
         kalman_pred = kalman.estimate(filt_boxes)
-        out_raw = tracking.draw_tracking_prediction(im_raw.astype('uint8'), kalman_pred,
+        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred,
                                                     roi=roi)
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred, roi=roi)
