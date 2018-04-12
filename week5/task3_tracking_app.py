@@ -26,7 +26,7 @@ def run(dataset):
         # Area for perspective correction and speed estimation
         detection_area = [(130, 30), (165, 30), (85, 160),(222, 160)]
         marker = 100
-        meter_pix = 12.5 / 41
+        meter_pix = 12.5 / 48
         
         #Shadow Detection
         th1 = 0.00015
