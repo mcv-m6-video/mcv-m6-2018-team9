@@ -150,8 +150,8 @@ def run(dataset):
 
 
     # Save individual gifs and an extra gif which compare them
-    animations.video_recorder(pred, '', "_orig")
-    animations.video_recorder(morph, '', "_morph")
-    animations.video_recorder_v2(tracker_raw, "_track_raw.gif")
-    animations.video_recorder_v2(tracker_bin, "_track_bin.gif")
-    animations.video_recorder_v2(app_video, "_app.gif")
+    animations.video_recorder(pred, '', f"{dataset}_orig")
+    animations.video_recorder(morph, '', f"{dataset}_morph")
+    animations.video_recorder_v2(tracker_raw, f"{dataset}_track_raw.gif")
+    animations.video_recorder_v2(tracker_bin, f"{dataset}_track_bin.gif")
+    animations.video_recorder_v2(app_video, f"{dataset}_app.gif")
