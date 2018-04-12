@@ -110,7 +110,7 @@ def run(dataset):
 
     # Homography for speed stimation
     speed_pred = {}
-    meter_pix = 1 / 30  # meters/pix ratio
+    meter_pix = 12.5 / 38  # meters/pix ratio
     invm = np.linalg.inv(Homography.DLT(coords=detection_area))
 
     tracker_raw = []
@@ -132,7 +132,7 @@ def run(dataset):
                                                     kalman_pred, roi=roi)
 
         speed.speed(sp=speed_pred, filters=kalman_pred, matrix=invm,
-                    meter_pix=meter_pix)
+                    meter_pix=meter_pix, meter_pix = meter_pix, fps= fps, skip_frames=1)
 
         # Append result
         tracker_raw.append(out_raw)
