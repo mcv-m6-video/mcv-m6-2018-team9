@@ -7,7 +7,6 @@ from video import (bg_subtraction, morphology, video_stabilization, tracking,
                    optical_flow, Homography, shadow_detection, tracking_app,
                    speed)
 
-
 def run(dataset):
 
     if dataset == 'sequence1':
@@ -16,16 +15,19 @@ def run(dataset):
         # Area for perspective correction and speed estimation
         detection_area = [(125, 45), (165, 45), (85, 156), (220, 156)]
         marker = 160
-
+        meter_pix = 12.5 / 38  
+        
         #Shadow Detection
         th1 = 0.0002
         th2 = 0.017
 
+        
     elif dataset == 'sequence3':
         # Area for perspective correction and speed estimation
         detection_area = [(130, 30), (165, 30), (85, 160),(222, 160)]
         marker = 100
-
+        meter_pix = 12.5 / 41
+        
         #Shadow Detection
         th1 = 0.00015
         th2 = 0.017
@@ -56,15 +58,17 @@ def run(dataset):
     test = seq[marker:]
     test_rgb = seq_rgb[marker:]
 
+    
     # Video stabilization and adaptive model prediction
-    train, train_mask = optical_flow.stabilize(train, mode='forward')
-    test, test_mask = optical_flow.stabilize(test, mode='forward')
+   
+    train, train_mask = optical_flow.stabilize(train.astype('uint8'), mode='forward')
+    test, test_mask = optical_flow.stabilize(test.astype('uint8'), mode='forward')
 
     # train = Homography.DLT(train, coords)
     # test = Homography.DLT(test, coords)
 
-    animations.video_recorder(train, '', f"{dataset}_train_stab")
-    animations.video_recorder(test, '', f"{dataset}_test_stab")
+    animations.video_recorder(train, '', "_train_stab")
+    animations.video_recorder(test, '', "_test_stab")
 
     model = bg_subtraction.create_model_mask(train, train_mask)
     pred = bg_subtraction.predict_masked(test, test_mask, model, alpha,
@@ -105,12 +109,11 @@ def run(dataset):
 
     # TrackingApplication
     frame_size = [180, 320]
-    fps = (30 / 6)
+    fps = (30 / 2)
     app = tracking_app.TrackingApplication(frame_size, fps, roi)
 
     # Homography for speed stimation
     speed_pred = {}
-    meter_pix = 12.5 / 38  # meters/pix ratio
     invm = np.linalg.inv(Homography.DLT(coords=detection_area))
 
     tracker_raw = []
@@ -126,13 +129,13 @@ def run(dataset):
                 bb = [x, y, w, h]
                 filt_boxes.append(bb)
         kalman_pred = kalman.estimate(filt_boxes)
-        out_raw = tracking.draw_tracking_prediction(im_raw, kalman_pred,
+        out_raw = tracking.draw_tracking_prediction(im_raw.astype('uint8'), kalman_pred,
                                                     roi=roi)
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred, roi=roi)
 
         speed.speed(sp=speed_pred, filters=kalman_pred, matrix=invm,
-                    meter_pix=meter_pix, meter_pix = meter_pix, fps= fps, skip_frames=1)
+                    meter_pix=meter_pix, skip_frames=1, fps= fps)
 
         # Append result
         tracker_raw.append(out_raw)
@@ -145,16 +148,10 @@ def run(dataset):
         print('total vehicles: ', app.vehicles)
         print('current vehicles: ', app.current_vehicles)
 
-        # # Some debug information
-        # frame_no += 1
-        # print('---------{:03d}---------'.format(frame_no))
-        # print(bboxes)
-        # for det in kalman_pred:
-        #     print('>>', det)
 
     # Save individual gifs and an extra gif which compare them
-    animations.video_recorder(pred, '', f"{dataset}_orig")
-    animations.video_recorder(morph, '', f"{dataset}_morph")
-    animations.video_recorder_v2(tracker_raw, f"{dataset}_track_raw.gif")
-    animations.video_recorder_v2(tracker_bin, f"{dataset}_track_bin.gif")
-    animations.video_recorder_v2(app_video, f"{dataset}_app.gif")
+    animations.video_recorder(pred, '', "_orig")
+    animations.video_recorder(morph, '', "_morph")
+    animations.video_recorder_v2(tracker_raw, "_track_raw.gif")
+    animations.video_recorder_v2(tracker_bin, "_track_bin.gif")
+    animations.video_recorder_v2(app_video, "_app.gif")
