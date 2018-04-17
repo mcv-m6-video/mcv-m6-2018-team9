@@ -58,9 +58,11 @@ code sections below.
 In the following link you will find our final report summarizing the
 stages and methods applied:
 
-- Mas, I., Prol, H., Puyoles, J., Grau, M., [Video Surveillance for Road Traffic Monitoring](https://www.overleaf.com/read/jnbhxkndbrmt), *5th Workshop on Road Traffic Monitoring*, 2018.
+- Mas, I., Prol, H., Puyoles, J., Grau, M., [Video Surveillance for Road Traffic Monitoring](https://github.com/mcv-m6-video/mcv-m6-2018-team9/blob/master/M6-Team_9-Final%20report.pdf), *5th Workshop on Road Traffic Monitoring*, 2018.
 
-This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.en_US">Creative Commons Attribution 3.0 Unported License</a>.
+This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.en_US">Creative Commons Attribution 3.0 Unported License</a>. Latex sources can be found in [overleaf](https://www.overleaf.com/read/jnbhxkndbrmt).
+
+
 
 ### Presentations
 
