@@ -51,6 +51,14 @@ code sections below.
 
 ## Material
 
+### Final report
+
+In the following link you will find our final report summarizing the
+stages and methods applied:
+
+- [Video Surveillance for Road Traffic Monitoring](https://www.overleaf.com/read/jnbhxkndbrmt)
+
+
 ### Presentations
 
 In addition to the source code we will keep updated this section with
