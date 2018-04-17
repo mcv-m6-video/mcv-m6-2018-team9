@@ -60,6 +60,8 @@ stages and methods applied:
 
 - Mas, I., Prol, H., Puyoles, J., Grau, M., [Video Surveillance for Road Traffic Monitoring](https://www.overleaf.com/read/jnbhxkndbrmt), *5th Workshop on Road Traffic Monitoring*, 2018.
 
+This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.en_US">Creative Commons Attribution 3.0 Unported License</a>.
+
 ### Presentations
 
 In addition to the source code we will keep updated this section with
