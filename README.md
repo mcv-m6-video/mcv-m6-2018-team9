@@ -11,6 +11,8 @@ _Module 6_ lectures, such as background substraction, foreground
 segmentation and filtering, optical flow estimation, video
 stabilization or region tracking.
 
+You can also check our [workshop slides](https://docs.google.com/presentation/d/1XTjxj2qV_XuitkfQL0ZdJQsu-eehlLoTKeotdI-agRs/edit?usp=sharing) or download them as "M6-Team_9-Workshop.pdf" from this repository.
+
 ## Environment and dependencies
 
 We have developed and test our code with:

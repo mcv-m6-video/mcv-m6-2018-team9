@@ -8,7 +8,20 @@ import matplotlib.pyplot as plt
 import time
 
 
+import numpy as np
+
+from data import cdnet
+from evaluation import metrics, animations
+from video import (bg_subtraction, morphology, video_stabilization, tracking,
+                   optical_flow, Homography, speed)
+import matplotlib.pyplot as plt
+import time
+from skimage.transform import warp
+
+
+
 def run(dataset):
+    import cv2
     """Use kalman filter to generate a video sequence
     Args:
       dataset: (str) 'highway' or 'traffic'
@@ -34,6 +47,9 @@ def run(dataset):
         stabilize_prediction = 5
         disappear_thr = 3
 
+        #speed
+        meter_pix = 12.19/19.55
+        
     elif dataset == 'traffic':
         # background subtraction model
         rho = 0.10
@@ -61,6 +77,10 @@ def run(dataset):
         stabilize_prediction = 5
         disappear_thr = 3
 
+        #speed
+        meter_pix = 12.19/68.55
+        
+        
     # Read dataset
     train, gt_train = cdnet.read_sequence('week5', dataset, 'train',
                                           colorspace='gray',annotated=True)
@@ -108,13 +128,16 @@ def run(dataset):
 
     frame_no = 0
     
+    #np.array(2) -> last
     sped = {}
-    meter_pix = 9./12.55 
+    #meter_pix = 9./12.55 
     fps = 12
     invm = np.linalg.inv(Homography.DLT(dataset=dataset))
+    #invm = Homography.DLT(dataset=dataset)
+          
+        
     number_frames = 0
     for im_bin, im_raw in zip(morph, test):
-      
         bboxes = tracking.find_bboxes(im_bin)
         kalman_pred = kalman.estimate(bboxes)
    
@@ -122,7 +145,8 @@ def run(dataset):
         out_bin = tracking.draw_tracking_prediction(im_bin[..., np.newaxis],
                                                     kalman_pred)
         number_frames+=1
-        out_raw = speed.speed(sped, filters = kalman_pred, out_image= out_raw, matrix=invm)
+        #
+        speed.speed(sped, filters = kalman_pred, matrix=invm, meter_pix=meter_pix)
 
         # Append result
         tracker_raw.append(out_raw)
@@ -142,18 +166,5 @@ def run(dataset):
     animations.video_recorder_v2(tracker_raw, "_track_raw.gif")
     animations.video_recorder_v2(tracker_bin, "_track_bin.gif")
     
-    #clean outliers
-    cleaned_dic = {}
-    for key in sp.keys():
-        if(key[0]=='s'):
-            values = np.array(sp[key])
-            values = values[abs(values - np.mean(values)) < 1.2 * np.std(values)]
-            cleaned_dic[key] = values
-            plt.plot(cleaned_dic[key], label=key)
-            print(key, ": mean ", np.mean(values), " median: " , np.median(values))
-    plt.legend()
-    plt.ylabel('speed')
-    plt.xlabel('frame')
-    plt.show()
+    speed.plot_speed(sped)
     return
-
