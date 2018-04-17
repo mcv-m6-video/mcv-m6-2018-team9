@@ -58,8 +58,7 @@ code sections below.
 In the following link you will find our final report summarizing the
 stages and methods applied:
 
-- [Video Surveillance for Road Traffic Monitoring](https://www.overleaf.com/read/jnbhxkndbrmt)
-
+- Mas, I., Prol, H., Puyoles, J., Grau, M., *[Video Surveillance for Road Traffic Monitoring](https://www.overleaf.com/read/jnbhxkndbrmt)*, 5th Workshop on Road Traffic Monitoring, 2018.
 
 ### Presentations
 
